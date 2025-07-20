@@ -71,7 +71,7 @@
             
             <div id="start-button-container" class="text-center mt-6">
                 <button id="start-btn" class="btn btn-primary text-lg" data-translate-key="start_recognition">인식 시작</button>
-            </div>
+                </div>
 
             <div class="w-full max-w-2xl mt-6">
                 <div class="mt-4">
@@ -381,24 +381,18 @@
                 let dataString = null;
 
                 if (results.multiHandLandmarks && results.multiHandLandmarks.length > 0) {
-                    // 모든 손의 뼈대와 랜드마크를 먼저 그림
                     for (const landmarks of results.multiHandLandmarks) {
                         drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS, {color: '#FFFFFF', lineWidth: 2});
                         drawLandmarks(canvasCtx, landmarks, {color: '#FF0000', radius: 2});
                     }
                     
-                    // 현재 활성화된 탭에 따른 기능 처리
                     switch (AppState.activeTabId) {
                         case 'hand-coords': 
                             dataString = HandAnalyzer.processIndexCoords(results.multiHandLandmarks[0], canvas.width, canvas.height); 
                             break;
                         case 'thumb-dist': 
                             dataString = HandAnalyzer.processThumbDist(results.multiHandLandmarks[0], canvas.width, canvas.height); 
-                            
-                            // ▼▼▼ [수정됨] MediaPipe의 내장 함수를 사용하여 선 그리기 ▼▼▼
-                            // 이렇게 하면 좌표계 변환을 직접 할 필요 없이 정확한 위치에 그려짐
                             drawConnectors(canvasCtx, results.multiHandLandmarks[0], [[4, 8]], { color: '#00FF00', lineWidth: 4 });
-                            // ▲▲▲ [수정됨] MediaPipe의 내장 함수를 사용하여 선 그리기 ▲▲▲
                             break;
                         case 'finger-count': 
                             dataString = HandAnalyzer.processFingerCount(results.multiHandLandmarks, results.multiHandedness); 
@@ -478,3 +472,4 @@
     </script>
 </body>
 </html>
+}
