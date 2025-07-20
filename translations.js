@@ -16,7 +16,9 @@ const translations = {
         "service5_description": "새로운 인공지능 서비스를 준비하고 있습니다.",
         "go_to_service": "서비스 바로가기",
         "coming_soon": "개발중",
-
+        "mcu_guide_title": "MCU코딩 안내",
+        "mcu_guide_description": "인공지능서비스와 연계된 지능화 사물을 개발하기 위한 MCU코딩 및 연결 방법을 안내합니다.",
+        
         // ==================== 공통 사용 & 관리자 ====================
         "back_to_main": "메인으로 돌아가기",
         "connection_settings": "🔌 연결 설정",
@@ -175,6 +177,8 @@ const translations = {
         "service5_title": "Service 5",
         "service5_description": "We are preparing a new artificial intelligence service.",
         "go_to_service": "Go to Service",
+        "mcu_guide_title": "MCU Coding Guide",
+        "mcu_guide_description": "Guide to MCU coding and connection methods for developing intelligent objects linked to AI services."
         "coming_soon": "Coming Soon",
 
         // ==================== Common Usage & Admin ====================
