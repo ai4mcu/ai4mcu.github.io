@@ -100,7 +100,7 @@
                     서비스 바로가기
                 </div>
             </a>
-
+            
             <a href="VOICE_AllinOne4MCU_V10.html" class="service-card block bg-white rounded-2xl shadow-lg overflow-hidden">
                 <div class="p-8">
                     <div class="flex items-center mb-4">
@@ -111,12 +111,12 @@
                         </div>
                         <div class="ml-4 flex-1">
                             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                                <h2 class="text-2xl font-bold text-gray-800 mb-2 sm:mb-0">음성인식 서비스</h2>
+                                <h2 class="text-2xl font-bold text-gray-800 mb-2 sm:mb-0" data-translate-key="voice_command_title">음성인식 서비스</h2>
                                 <img src="voice.png" alt="Voice API" class="h-8 sm:h-10 w-auto object-contain" onerror="this.style.display='none'">
                             </div>
                         </div>
                     </div>
-                    <p class="text-gray-600">Google의 Web Speech API로 음성인식 결과를 사용하여 MCU를 제어합니다.</p>
+                    <p class="text-gray-600" data-translate-key="voice_command_description">Google의 Web Speech API로 음성인식 결과를 사용하여 MCU를 제어합니다.</p>
                 </div>
                 <div class="bg-red-500 text-white text-center font-bold py-2" data-translate-key="go_to_service">
                     서비스 바로가기
@@ -128,9 +128,9 @@
                         <div class="bg-purple-100 text-purple-800 p-3 rounded-full">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
                         </div>
-                        <h2 class="text-2xl font-bold text-gray-800 ml-4">서비스 5</h2>
+                        <h2 class="text-2xl font-bold text-gray-800 ml-4" data-translate-key="service5_title">서비스 5</h2>
                     </div>
-                    <p class="text-gray-600">새로운 인공지능 서비스를 준비하고 있습니다.</p>
+                    <p class="text-gray-600" data-translate-key="service5_description">새로운 인공지능 서비스를 준비하고 있습니다.</p>
                 </div>
                 <div class="bg-gray-400 text-white text-center font-bold py-2" data-translate-key="coming_soon">
                     개발중
@@ -198,7 +198,6 @@
                     localStorage.setItem(this.visitorIdKey, visitorId);
                 }
 
-                // ... (IP 정보 수집 로직은 그대로 유지) ...
                 let locationInfo = { 
                     country: '대한민국', 
                     city: '서울', 
@@ -228,7 +227,6 @@
                 return {
                     visitorId: visitorId,
                     timestamp: now.toISOString(),
-                    // 현재 감지된 언어에 맞춰 날짜/시간 포맷 변경
                     date: now.toLocaleDateString(typeof currentLanguage !== 'undefined' ? currentLanguage : 'ko'),
                     time: now.toLocaleTimeString(typeof currentLanguage !== 'undefined' ? currentLanguage : 'ko'),
                     ip: locationInfo.ip,
@@ -305,7 +303,6 @@
             }
         }
 
-        // 페이지 로드 시 초기화
         document.addEventListener('DOMContentLoaded', () => {
             new VisitorCounter();
         });
