@@ -137,7 +137,7 @@ const translations = {
         "developer_info_hand": "WebSerial과 WebBLE를 이용해 손가락 인식 결과를 유/무선으로 MCU에 전송하는 웹앱입니다.",
         
         // ==================== 음성 명령 페이지 (VOICE_AllinOne4MCU_V10.html) ====================
-        "voice_page_title": "음성인식 서비스 for MCU",
+        "voice_page_title": "음성인식 서비스",
         "voice_page_subtitle": "Google Web Speech API를 사용하여 음성으로 MCU를 제어합니다.",
         "voice_recognition_control": "음성인식 제어",
         "language_select": "언어 선택",
@@ -297,7 +297,7 @@ const translations = {
         "developer_info_hand": "A local web app that sends hand recognition results to wired/wireless MCUs using WebSerial and WebBLE.",
 
         // ==================== Voice Command Page (VOICE_AllinOne4MCU_V10.html) ====================
-        "voice_page_title": "Voice Recognition Service for MCU",
+        "voice_page_title": "Voice Recognition Service",
         "voice_page_subtitle": "Control your MCU with your voice using Google's Web Speech API.",
         "voice_recognition_control": "Voice Recognition Control",
         "language_select": "Select Language",
