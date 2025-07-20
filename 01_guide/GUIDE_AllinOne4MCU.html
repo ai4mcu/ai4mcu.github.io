@@ -7,25 +7,24 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Noto Sans KR', sans-serif; background-color: #f5f5f5; }
-        .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-right: 10px; }
-        .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
-        .btn-primary { background: #e74c3c; color: white; } 
-        .btn-primary:hover { background: #c0392b; }
-        .btn-danger { background: #1abc9c; color: white; }
-        .btn-danger:hover { background: #16a085; }
-        .status { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-left: 10px; }
-        .status.connected { background: #d4efdf; color: #1e8449; }
-        .status.disconnected { background: #f9ebea; color: #b03a2e; }
-        .status.listening { background: #d6eaf8; color: #1a5276; }
-        .highlight { border: 2px solid #e74c3c !important; box-shadow: 0 0 10px rgba(231, 76, 60, 0.5); transform: scale(1.01); }
+        html {
+            scroll-behavior: smooth;
+        }
+        body { 
+            font-family: 'Noto Sans KR', sans-serif; 
+            background-color: #f5f5f5; 
+        }
+        .content-section {
+            padding-top: 80px; /* 헤더 높이만큼 여백주기 */
+            margin-top: -80px;
+        }
     </style>
 </head>
 <body class="p-4">
     <script src="../translations.js"></script> 
     
-    <div class="max-w-4xl w-full mx-auto p-4 md:p-6 bg-white rounded-2xl shadow-lg">
-        <header class="relative text-center mb-6 p-5 rounded-2xl shadow-md">
+    <div class="max-w-4xl w-full mx-auto">
+        <header class="relative text-center mb-6 p-5 bg-white rounded-2xl shadow-lg">
              <a href="../index.html" title="메인으로 돌아가기" class="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
@@ -34,6 +33,36 @@
             <h1 class="text-3xl md:text-4xl font-bold text-purple-400" data-translate-key="guide_page_title">⚙️MCU코딩 및 연결 가이드</h1>
             <p class="text-gray-500 mt-2" data-translate-key="guide_page_subtitle">TM, 얼굴인식, 핸드인식, 음성인식 서비스와 MCU를 연결하는 방법에 대한 안내입니다.</p>
         </header>
+
+        <div class="toc-box bg-white p-6 rounded-2xl shadow-lg mb-8">
+            <h2 class="text-2xl font-bold mb-4 text-center">목차</h2>
+            <ul class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center">
+                <li><a href="#section-1" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">1. 아두이노 유선</a></li>
+                <li><a href="#section-2" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">2. 아두이노 무선</a></li>
+                <li><a href="#section-3" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">3. 마이크로비트 유선</a></li>
+                <li><a href="#section-4" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">4. 마이크로비트 무선</a></li>
+                <li><a href="#section-5" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">5. 티처블머신과 MCU</a></li>
+                <li><a href="#section-6" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">6. 얼굴인식과 MCU</a></li>
+                <li><a href="#section-7" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">7. 핸드인식과 MCU</a></li>
+                <li><a href="#section-8" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">8. 음성인식과 MCU</a></li>
+                <li><a href="#section-9" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">9. 동영상 매뉴얼</a></li>
+                <li><a href="#section-10" class="block p-3 bg-gray-100 hover:bg-purple-100 rounded-lg transition">10. 소스코드 링크</a></li>
+            </ul>
+        </div>
+        <br>
+        <hr class="my-8 border-gray-200">
+        <div class="content-container space-y-4">
+            <div id="section-1" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">1. 아두이노 유선 연결 코딩</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-2" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">2. 아두이노 무선 연결 코딩</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-3" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">3. 마이크로비트 유선 연결 코딩</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-4" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">4. 마이크로비트 무선 연결 코딩</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-5" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">5. 티처블머신과 MCU</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-6" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">6. 얼굴인식과 MCU</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-7" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">7. 핸드인식과 MCU</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-8" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">8. 음성인식과 MCU</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-9" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">9. 동영상 매뉴얼</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            <div id="section-10" class="content-section bg-white p-6 rounded-2xl shadow-lg"><h3 class="text-2xl font-bold text-purple-600">10. 소스코드 링크</h3><p class="mt-4 text-gray-600">이곳에 내용이 들어갑니다.</p></div>
+            </div>
     </div>
 </body>
 </html>
