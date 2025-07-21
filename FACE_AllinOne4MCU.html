@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>얼굴 인식 올인원 웹앱</title>
+    <title data-translate-key="face_page_title">얼굴 인식 올인원 웹앱</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
@@ -38,24 +38,24 @@
 <body class="p-4">
     <div class="max-w-4xl w-full mx-auto p-4 md:p-6 bg-white rounded-2xl shadow-lg">
         <header class="relative text-center mb-6 p-5 rounded-2xl shadow-md bg-white">
-             <a href="index.html" title="메인으로 돌아가기" class="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors">
+             <a href="index.html" title="메인으로 돌아가기" class="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors" data-translate-key="go_to_main_title" title-key="go_to_main_title">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             </a>
-            <h1 class="text-3xl md:text-4xl font-bold text-gray-800" style="color: var(--primary);">😀 얼굴 인식 올인원</h1>
-            <p class="text-gray-500 mt-2">MediaPipe의 얼굴 인식 기술을 활용한 다양한 기능을 제공합니다.</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-800" style="color: var(--primary);" data-translate-key="face_page_title">😀 얼굴 인식 올인원</h1>
+            <p class="text-gray-500 mt-2" data-translate-key="face_page_subtitle">MediaPipe의 얼굴 인식 기술을 활용한 다양한 기능을 제공합니다.</p>
         </header>
 
         <main class="flex flex-col items-center">
             <div class="w-full max-w-3xl mb-6">
                 <div class="tabs rounded-lg overflow-hidden border">
-                    <button class="tab active" onclick="FaceRecognitionApp.switchTab('face-coords')">📍 미간 좌표</button>
-                    <button class="tab" onclick="FaceRecognitionApp.switchTab('yawn-detection')">👄 하품 감지</button>
-                    <button class="tab" onclick="FaceRecognitionApp.switchTab('blink-detection')">👁️ 눈 깜박임</button>
-                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-count')">👨‍👩‍👧‍👦 얼굴 개수</button>
-                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-size')">📏 얼굴 크기</button>
-                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-service6')">✨ 서비스 6</button>
+                    <button class="tab active" onclick="FaceRecognitionApp.switchTab('face-coords')" data-translate-key="tab_face_coords">📍 미간 좌표</button>
+                    <button class="tab" onclick="FaceRecognitionApp.switchTab('yawn-detection')" data-translate-key="tab_yawn">👄 하품 감지</button>
+                    <button class="tab" onclick="FaceRecognitionApp.switchTab('blink-detection')" data-translate-key="tab_blink">👁️ 눈 깜박임</button>
+                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-count')" data-translate-key="tab_face_count">👨‍👩‍👧‍👦 얼굴 개수</button>
+                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-size')" data-translate-key="tab_face_size">📏 얼굴 크기</button>
+                    <button class="tab" onclick="FaceRecognitionApp.switchTab('face-service6')" data-translate-key="tab_face_service6">✨ 서비스 6</button>
                 </div>
             </div>
 
@@ -65,58 +65,60 @@
             </div>
             
             <div id="start-button-container" class="text-center mt-6">
-                <button id="start-btn" class="btn btn-primary text-lg">인식 시작</button>
+                <button id="start-btn" class="btn btn-primary text-lg" data-translate-key="start_recognition">인식 시작</button>
             </div>
 
             <div class="w-full max-w-lg mt-6">
                 <div class="mt-4">
-                    <div id="face-coords-tab" class="tab-content active"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2">미간 중심 좌표</h3><div id="coords-display" class="text-2xl font-bold text-blue-600 opacity-50">X: <span id="x-coord">0</span>, Y: <span id="y-coord">0</span></div></div></div>
-                    <div id="yawn-detection-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2">입 벌림 크기</h3><div id="mouth-open-display" class="text-2xl font-bold text-green-600 opacity-50"><span id="mouth-open-value">0</span></div></div></div>
-                    <div id="blink-detection-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2">눈 깜박임 상태 (1: 깜박임, 0: 평상시)</h3><div id="blink-display" class="grid grid-cols-3 gap-4 text-2xl font-bold opacity-50"><div class="text-purple-600"><span>왼쪽:</span> <span id="left-blink-status">0</span></div><div class="text-purple-600"><span>오른쪽:</span> <span id="right-blink-status">0</span></div><div class="text-purple-600"><span>양쪽:</span> <span id="both-blink-status">0</span></div></div></div></div>
-                    <div id="face-count-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2">감지된 얼굴 개수</h3><div id="face-count-display" class="text-2xl font-bold text-teal-600 opacity-50"><span id="face-count-value">0</span> <span>개</span></div></div></div>
-                    <div id="face-size-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2">얼굴 상자 크기 (너비, 높이)</h3><div id="face-size-display" class="text-2xl font-bold text-orange-600 opacity-50">X: <span id="face-width-value">0</span>, Y: <span id="face-height-value">0</span></div></div></div>
-                    <div id="face-service6-tab" class="tab-content text-center py-10"><h3 class="text-2xl font-bold text-gray-400">Coming Soon</h3></div>
+                    <div id="face-coords-tab" class="tab-content active"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2" data-translate-key="glabella_coords">미간 중심 좌표</h3><div id="coords-display" class="text-2xl font-bold text-blue-600 opacity-50">X: <span id="x-coord">0</span>, Y: <span id="y-coord">0</span></div></div></div>
+                    <div id="yawn-detection-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2" data-translate-key="mouth_open_size">입 벌림 크기</h3><div id="mouth-open-display" class="text-2xl font-bold text-green-600 opacity-50"><span id="mouth-open-value">0</span></div></div></div>
+                    <div id="blink-detection-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2" data-translate-key="blink_status">눈 깜박임 상태 (1: 깜박임, 0: 평상시)</h3><div id="blink-display" class="grid grid-cols-3 gap-4 text-2xl font-bold opacity-50"><div class="text-purple-600"><span data-translate-key="left_eye">왼쪽:</span> <span id="left-blink-status">0</span></div><div class="text-purple-600"><span data-translate-key="right_eye">오른쪽:</span> <span id="right-blink-status">0</span></div><div class="text-purple-600"><span data-translate-key="both_eyes">양쪽:</span> <span id="both-blink-status">0</span></div></div></div></div>
+                    <div id="face-count-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2" data-translate-key="detected_face_count">감지된 얼굴 개수</h3><div id="face-count-display" class="text-2xl font-bold text-teal-600 opacity-50"><span id="face-count-value">0</span> <span data-translate-key="unit_faces">개</span></div></div></div>
+                    <div id="face-size-tab" class="tab-content"><div class="bg-gray-50 p-4 rounded-lg text-center"><h3 class="font-semibold text-gray-600 mb-2" data-translate-key="face_box_size">얼굴 상자 크기 (너비, 높이)</h3><div id="face-size-display" class="text-2xl font-bold text-orange-600 opacity-50">X: <span id="face-width-value">0</span>, Y: <span id="face-height-value">0</span></div></div></div>
+                    <div id="face-service6-tab" class="tab-content text-center py-10"><h3 class="text-2xl font-bold text-gray-400" data-translate-key="coming_soon">Coming Soon</h3></div>
                 </div>
             </div>
         </main>
 
         <div class="card mt-6 p-4 bg-gray-50 rounded-lg">
-            <h3 class="text-lg font-bold mb-3">🔌 연결 설정</h3>
+            <h3 class="text-lg font-bold mb-3" data-translate-key="connection_settings">🔌 연결 설정</h3>
             <div class="input-group mb-4">
-                <label for="ble-device-type" class="text-sm font-medium text-gray-700">블루투스 장치 유형</label>
+                <label for="ble-device-type" class="text-sm font-medium text-gray-700" data-translate-key="ble_device_type">블루투스 장치 유형</label>
                 <select id="ble-device-type" class="w-full mt-1 p-2 border border-gray-300 rounded-md">
-                    <option value="microbit">마이크로비트 (이름으로 검색)</option>                    
-                    <option value="generic">일반 UART 장치 (Arduino, ESP32 등)</option>
+                    <option value="microbit" data-translate-key="microbit_device">마이크로비트 (이름으로 검색)</option>                    
+                    <option value="generic" data-translate-key="generic_uart_device">일반 UART 장치 (Arduino, ESP32 등)</option>
                 </select>
             </div>
-            <button id="connectSerialBtn" class="btn btn-primary">시리얼 연결</button>
-            <button id="disconnectSerialBtn" class="btn btn-danger" disabled>해제</button>
-            <button class="btn btn-primary" onclick="ConnectionManager.connectBLE()">블루투스 연결</button>
-            <button class="btn btn-danger" onclick="ConnectionManager.disconnectBLE()">해제</button>
-            <span id="connectionStatus" class="status disconnected">연결 안됨</span>
+            <button id="connectSerialBtn" class="btn btn-primary" data-translate-key="serial_connect">시리얼 연결</button>
+            <button id="disconnectSerialBtn" class="btn btn-danger" disabled data-translate-key="serial_disconnect">해제</button>
+            <button class="btn btn-primary" onclick="ConnectionManager.connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+            <button class="btn btn-danger" onclick="ConnectionManager.disconnectBLE()" data-translate-key="ble_disconnect">해제</button>
+            <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
         </div>
                 <div class="card mt-6 p-4 bg-blue-50 rounded-lg">
-            <h3 class="text-lg font-bold mb-3">💡 사용 방법</h3>
+            <h3 class="text-lg font-bold mb-3" data-translate-key="usage_guide">💡 사용 방법</h3>
             <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
-                <li>상단 탭에서 원하는 얼굴 인식 기능을 선택하세요.</li>
-                <li>'인식 시작' 버튼을 클릭하여 카메라를 활성화하세요.</li>
-                <li>MCU 장치를 시리얼 또는 블루투스로 연결하세요.</li>
-                <li>얼굴이 인식되면 실시간으로 데이터가 MCU로 전송됩니다.</li>
-                <li>MCU에서 수신한 데이터를 활용하여 다양한 출력장치를 제어하세요.</li>
+                <li data-translate-key="guide_face_1">상단 탭에서 원하는 얼굴 인식 기능을 선택하세요.</li>
+                <li data-translate-key="guide_face_2">'인식 시작' 버튼을 클릭하여 카메라를 활성화하세요.</li>
+                <li data-translate-key="guide_face_3">MCU 장치를 시리얼 또는 블루투스로 연결하세요.</li>
+                <li data-translate-key="guide_face_4">얼굴이 인식되면 실시간으로 데이터가 MCU로 전송됩니다.</li>
+                <li data-translate-key="guide_face_5">MCU에서 수신한 데이터를 활용하여 다양한 출력장치를 제어하세요.</li>
             </ol>
         </div>
 
         <div class="card mt-6 p-4 bg-gray-100 rounded-lg">
-            <h3 class="text-lg font-bold mb-3">👨‍💻 개발자 정보</h3>
+            <h3 class="text-lg font-bold mb-3" data-translate-key="developer_info">👨‍💻 개발자 정보</h3>
             <div class="text-sm text-gray-600 space-y-2">
-                <p><strong>김석전</strong>, 송도중학교 정보교사 / 인하대학교 겸임교수 📅 Since 2023.04.24 | 📧 alphaco@kakao.com</p>
+                <p>
+                    <strong data-translate-key="developer_name">김석전</strong><span data-translate-key="developer_affiliation_face">, 송도중학교 정보교사 / 인하대학교 겸임교수</span> 📅 Since 2023.04.24 | 📧 alphaco@kakao.com
+                </p>
                 <div class="mt-3 p-3 bg-white rounded border border-gray-200">
-                    <p class="mb-2">WebSerial과 WebBLE를 이용해 얼굴 인식 결과를 유/무선으로 MCU에 전송하는 웹앱입니다.</p>
-                    <p class="mb-2">✅ 아두이노, 마이크로비트, ESP32, 라즈베리파이 피코 등 모든 MCU를 사용할 수 있습니다.</p>
-                    <p class="mb-2">🌐 Chrome, Edge 브라우저에서 테스트 되었습니다.</p>
-                    <p class="mb-2">⚙️ 하드웨어는 블록코딩이나 텍스트 코딩을 이용해 사전에 코드 업로드가 필요합니다.</p>
-                    <p class="mb-2">🚀 인공지능에 다양한 출력장치를 연결하여 AIoT 애플리케이션을 제작해 보세요.</p>
-                    <p class="mt-3 font-medium">📜 CCL: BY-NC-ND</p>
+                    <p class="mb-2" data-translate-key="developer_info_face">WebSerial과 WebBLE를 이용해 얼굴 인식 결과를 유/무선으로 MCU에 전송하는 웹앱입니다.</p>
+                    <p class="mb-2" data-translate-key="app_description_2">✅ 아두이노, 마이크로비트, ESP32, 라즈베리파이 피코 등 모든 MCU를 사용할 수 있습니다.</p>
+                    <p class="mb-2" data-translate-key="app_description_3">🌐 Chrome, Edge 브라우저에서 테스트 되었습니다.</p>
+                    <p class="mb-2" data-translate-key="developer_info_hardware_note_face">⚙️ 하드웨어는 블록코딩이나 텍스트 코딩을 이용해 사전에 코드 업로드가 필요합니다.</p>
+                    <p class="mb-2" data-translate-key="app_description_5">🚀 인공지능에 다양한 출력장치를 연결하여 AIoT 애플리케이션을 제작해 보세요.</p>
+                    <p class="mt-3 font-medium" data-translate-key="ccl">📜 CCL: BY-NC-ND</p>
                 </div>
             </div>
         </div>

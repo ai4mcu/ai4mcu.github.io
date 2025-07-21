@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>인성인식 서비스 for MCU</title>
+    <title data-translate-key="voice_page_title">음성인식 서비스 for MCU</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
@@ -22,24 +22,22 @@
     </style>
 </head>
 <body class="p-4">
-    <script src="translations.js"></script> 
-    
     <div class="max-w-4xl w-full mx-auto p-4 md:p-6 bg-white rounded-2xl shadow-lg">
         <header class="relative text-center mb-6 p-5 rounded-2xl shadow-md">
-            <a href="index.html" title="메인으로 돌아가기" class="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors">
+            <a href="index.html" title="메인으로 돌아가기" class="absolute left-4 md:left-6 top-1/2 -translate-y-1/2 p-2 rounded-full hover:bg-gray-100 transition-colors" data-translate-key="go_to_main_title" title-key="go_to_main_title">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                 </svg>
             </a>
-            <h1 class="text-3xl md:text-4xl font-bold text-red-600">🎤 인성인식 서비스</h1>
-            <p class="text-gray-500 mt-2">Google Web Speech API를 사용하여 음성으로 MCU를 제어합니다.</p>
+            <h1 class="text-3xl md:text-4xl font-bold text-red-600" data-translate-key="voice_page_title">🎤 음성인식 서비스</h1>
+            <p class="text-gray-500 mt-2" data-translate-key="voice_page_subtitle">Google Web Speech API를 사용하여 음성으로 MCU를 제어합니다.</p>
         </header>
 
         <main>
             <div class="card bg-gray-50 p-6 rounded-lg mb-6">
-                <h3 class="text-xl font-bold mb-4">음성인식 제어</h3>
+                <h3 class="text-xl font-bold mb-4" data-translate-key="voice_control_settings">음성인식 제어</h3>
                 <div class="mb-4">
-                    <label for="languageSelect" class="block text-sm font-medium mb-2">언어 선택</label>
+                    <label for="languageSelect" class="block text-sm font-medium mb-2" data-translate-key="language_select">언어 선택</label>
                     <select id="languageSelect" class="w-full p-2 border border-gray-300 rounded-lg">
                         <option value="ko-KR">🇰🇷 한국어</option>
                         <option value="en-US">🇺🇸 English (US)</option>
@@ -60,59 +58,63 @@
                     </select>
                 </div>
                 <div class="flex gap-3">
-                    <button id="start-btn" class="btn btn-primary flex-1">인식 시작</button>
-                    <button id="stop-btn" class="btn btn-danger flex-1" disabled>인식 정지</button>
+                    <button id="start-btn" class="btn btn-primary flex-1" data-translate-key="start">인식 시작</button>
+                    <button id="stop-btn" class="btn btn-danger flex-1" disabled data-translate-key="stop">인식 정지</button>
                     </div>
-                <div id="recognition-status" class="status disconnected text-center w-full mt-4 p-2">인식 대기중</div>
+                <div id="recognition-status" class="status disconnected text-center w-full mt-4 p-2" data-translate-key="status_voice_waiting">인식 대기중</div>
                 <div class="mt-4 p-3 bg-white rounded-lg border text-center">
-                    <p class="text-sm text-gray-500">최종 인식된 문장:</p>
+                    <p class="text-sm text-gray-500" data-translate-key="final_transcript_label">최종 인식된 문장:</p>
                     <p id="final-transcript" class="text-lg font-semibold text-gray-800 min-h-[28px]">...</p>
                 </div>
             </div>
 
             <div class="card bg-gray-50 p-6 rounded-lg mb-6">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold">명령어/전송 값 설정 (최대 20개)</h3>
-                    <button id="add-command-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold">+</button>
+                    <h3 class="text-xl font-bold" data-translate-key="command_settings">명령어/전송 값 설정 (최대 20개)</h3>
+                    <button id="add-command-btn" class="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-bold" data-translate-key="add_command">+</button>
                 </div>
                 <div id="command-list" class="space-y-3">
-                    </div>
+                </div>
             </div>
 
             <div class="card bg-gray-50 p-6 rounded-lg">
-                <h3 class="text-xl font-bold mb-4">🔌 연결 설정</h3>
+                <h3 class="text-xl font-bold mb-4" data-translate-key="connection_settings">🔌 연결 설정</h3>
                 <div class="mb-4">
-                    <label for="ble-device-type" class="text-sm font-medium text-gray-700">블루투스 장치 유형</label>
+                    <label for="ble-device-type" class="text-sm font-medium text-gray-700" data-translate-key="ble_device_type">블루투스 장치 유형</label>
                     <select id="ble-device-type" class="w-full mt-1 p-2 border border-gray-300 rounded-md">
-                        <option value="microbit">마이크로비트 (이름으로 검색)</option>
-                        <option value="generic">일반 UART 장치 (Arduino, ESP32 등)</option>
+                        <option value="microbit" data-translate-key="microbit_device">마이크로비트 (이름으로 검색)</option>
+                        <option value="generic" data-translate-key="generic_uart_device">일반 UART 장치 (Arduino, ESP32 등)</option>
                     </select>
                 </div>
-                <button class="btn btn-primary" onclick="connectSerial()">시리얼 연결</button>
-                <button class="btn btn-danger" onclick="disconnectSerial()">해제</button>
-                <button class="btn btn-primary" onclick="connectBLE()">블루투스 연결</button>
-                <button class="btn btn-danger" onclick="disconnectBLE()">해제</button>
-                <span id="connectionStatus" class="status disconnected">연결 안됨</span>
+                <button class="btn btn-primary" onclick="connectSerial()" data-translate-key="serial_connect">시리얼 연결</button>
+                <button class="btn btn-danger" onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
+                <button class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+                <button class="btn btn-danger" onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
+                <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
             </div>
 
             <div class="card bg-gray-50 p-6 rounded-lg mt-6">
-                <h3 class="text-xl font-bold mb-4">💡 사용 방법</h3>
+                <h3 class="text-xl font-bold mb-4" data-translate-key="usage_guide">💡 사용 방법</h3>
                 <ol class="list-decimal list-inside space-y-2 text-gray-700">
-                    <li>사용할 언어를 선택합니다.</li>
-                    <li>'+' 버튼을 눌러 인식할 단어와 MCU로 보낼 값을 설정합니다. (최대 20개)</li>
-                    <li>시리얼 또는 블루투스로 제어할 장치를 연결합니다.</li>
-                    <li>'인식 시작' 버튼을 누르고 설정한 단어를 포함하여 말합니다.</li>
-                    <li>단어가 인식되면 해당 칸이 붉게 강조되며 설정된 값이 자동으로 전송됩니다.</li>
+                    <li data-translate-key="guide_voice_1">사용할 언어를 선택합니다.</li>
+                    <li data-translate-key="guide_voice_2">
+                        '+' 버튼을 눌러 인식할 단어와 MCU로 보낼 값을 설정합니다. (최대 20개)
+                    </li>
+                    <li data-translate-key="guide_voice_3">시리얼 또는 블루투스로 제어할 장치를 연결합니다.</li>
+                    <li data-translate-key="guide_voice_4">'인식 시작' 버튼을 누르고 설정한 단어를 포함하여 말합니다.</li>
+                    <li data-translate-key="guide_voice_5">단어가 인식되면 해당 칸이 붉게 강조되며 설정된 값이 자동으로 전송됩니다.</li>
                 </ol>
             </div>
 
             <div class="card bg-gray-50 p-6 rounded-lg mt-6">
                 <h3 class="text-xl font-bold mb-4" data-translate-key="developer_info">👨‍💻 개발자 정보</h3>
                 <div class="text-sm text-gray-700 space-y-2">
-                    <p><strong data-translate-key="developer_name">김석전</strong>, 송도중학교 정보교사 / 인하대학교 겸임교수</p>
+                    <p>
+                        <strong data-translate-key="developer_name">김석전</strong><span data-translate-key="developer_affiliation">, 송도중학교 정보교사 / 인하대학교 겸임교수</span>
+                    </p>
                     <p class="text-xs text-gray-500">📅 Since 2023.04.24 | 📧 alphaco@kakao.com</p>
                     <div class="mt-4 p-4 bg-white rounded-lg border border-gray-200 space-y-2">
-                        <p data-translate-key="app_description_1">Web Speech API를 이용해 음성 인식 결과를 유/무선 MCU로 전송하는 웹앱입니다.</p>
+                        <p data-translate-key="developer_info_voice">Web Speech API를 이용해 음성 인식 결과를 유/무선 MCU로 전송하는 웹앱입니다.</p>
                         <p data-translate-key="app_description_2">✅ 아두이노, 마이크로비트, ESP32, 라즈베리파이 피코 등 모든 MCU를 사용할 수 있습니다.</p>
                         <p data-translate-key="app_description_3">🌐 Chrome, Edge 브라우저에서 테스트 되었습니다.</p>
                         <p data-translate-key="ccl" class="font-semibold pt-2">📜 CCL: BY-NC-ND</p>
