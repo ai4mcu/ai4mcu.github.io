@@ -33,6 +33,13 @@
         .status.disconnected { background: #ffebee; color: #c62828; }
         #canvas-container { position: relative; width: 100%; max-width: 640px; aspect-ratio: 4 / 3; }
         #output_canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+        /* 토글 스위치 스타일 */
+        .switch { position: relative; display: inline-block; width: 50px; height: 28px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 28px; }
+        .slider:before { position: absolute; content: ""; height: 20px; width: 20px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--primary); }
+        input:checked + .slider:before { transform: translateX(22px); }
     </style>
 </head>
 <body class="p-4">
@@ -89,18 +96,31 @@
                     <option value="generic" data-translate-key="generic_uart_device">일반 UART 장치 (Arduino, ESP32 등)</option>
                 </select>
             </div>
-            <button id="connectSerialBtn" class="btn btn-primary" data-translate-key="serial_connect">시리얼 연결</button>
-            <button id="disconnectSerialBtn" class="btn btn-danger" disabled data-translate-key="serial_disconnect">해제</button>
-            <button class="btn btn-primary" onclick="ConnectionManager.connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
-            <button class="btn btn-danger" onclick="ConnectionManager.disconnectBLE()" data-translate-key="ble_disconnect">해제</button>
-            <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
+            <div class="flex flex-wrap items-center">
+                <button id="connectSerialBtn" class="btn btn-primary" data-translate-key="serial_connect">시리얼 연결</button>
+                <button id="disconnectSerialBtn" class="btn btn-danger" disabled data-translate-key="serial_disconnect">해제</button>
+                <button class="btn btn-primary" onclick="ConnectionManager.connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+                <button class="btn btn-danger" onclick="ConnectionManager.disconnectBLE()" data-translate-key="ble_disconnect">해제</button>
+                <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
+            </div>
+            <div class="mt-4 pt-4 border-t flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-sm font-medium text-gray-700">전송 방식:</span>
+                    <span id="send-mode-status" class="ml-2 text-sm font-bold"></span>
+                </div>
+                <label class="switch">
+                    <input type="checkbox" id="send-once-toggle" checked>
+                    <span class="slider"></span>
+                </label>
+            </div>
         </div>
-                <div class="card mt-6 p-4 bg-blue-50 rounded-lg">
+
+        <div class="card mt-6 p-4 bg-blue-50 rounded-lg">
             <h3 class="text-lg font-bold mb-3" data-translate-key="usage_guide">💡 사용 방법</h3>
             <ol class="list-decimal list-inside space-y-2 text-sm text-gray-700">
                 <li data-translate-key="guide_face_1">상단 탭에서 원하는 얼굴 인식 기능을 선택하세요.</li>
                 <li data-translate-key="guide_face_2">'인식 시작' 버튼을 클릭하여 카메라를 활성화하세요.</li>
-                <li data-translate-key="guide_face_3">MCU 장치를 시리얼 또는 블루투스로 연결하세요.</li>
+                <li data-translate-key="guide_face_3">MCU 장치를 시리얼 또는 블루투스로 연결하고, 값 전송 방식을 선택하세요(1회/연속).</li>
                 <li data-translate-key="guide_face_4">얼굴이 인식되면 실시간으로 데이터가 MCU로 전송됩니다.</li>
                 <li data-translate-key="guide_face_5">MCU에서 수신한 데이터를 활용하여 다양한 출력장치를 제어하세요.</li>
             </ol>
@@ -125,24 +145,15 @@
     </div>
 
     <script>
-        // <<< START: 수정된 부분 >>>
-        // 번역 파일(translations.js)이 없을 경우를 대비한 대체 함수
         function _t(key, params = {}) {
             const translations = {
-                'loading_model': '모델 로딩 중...',
-                'recognizing': '인식 중...',
-                'start_recognition': '인식 시작',
-                'status_connected': `${params.connectionType || '장치'} 연결됨`,
-                'status_disconnected': '연결 안됨',
-                'serial_connect': '시리얼 연결',
-                'serial_connect_error': `시리얼 연결 오류: ${params.error || '알 수 없는 오류'}`,
-                'ble_connect': '블루투스 연결',
-                'ble_connect_success': '블루투스 연결 성공!',
-                'ble_connect_error': `블루투스 연결 오류: ${params.error || '알 수 없는 오류'}`
+                'loading_model': '모델 로딩 중...', 'recognizing': '인식 중...', 'start_recognition': '인식 시작',
+                'status_connected': `${params.connectionType || '장치'} 연결됨`, 'status_disconnected': '연결 안됨',
+                'serial_connect': '시리얼 연결', 'serial_connect_error': `시리얼 연결 오류: ${params.error || '알 수 없는 오류'}`,
+                'ble_connect': '블루투스 연결', 'ble_connect_success': '블루투스 연결 성공!', 'ble_connect_error': `블루투스 연결 오류: ${params.error || '알 수 없는 오류'}`
             };
             return translations[key] || key;
         }
-        // <<< END: 수정된 부분 >>>
 
         const CONFIG = { EAR_THRESHOLD: 0.16, BLINK_CONSECUTIVE_FRAMES: 2, CAMERA_WIDTH: 640, CAMERA_HEIGHT: 480, SERIAL_BAUD_RATE: 9600, BLE_SERVICE_UUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', BLE_CHARACTERISTIC_UUID: '6e400003-b5a3-f393-e0a9-e50e24dcca9e', SEND_INTERVAL_MS: 100 };
         const LANDMARKS = { GLABELLA: 6, UPPER_LIP: 13, LOWER_LIP: 14, LEFT_EYE: [362, 385, 387, 263, 373, 380], RIGHT_EYE: [33, 160, 158, 133, 153, 144] };
@@ -160,35 +171,19 @@
                     connectSerialBtn: document.getElementById('connectSerialBtn'),
                     disconnectSerialBtn: document.getElementById('disconnectSerialBtn'),
                     connectionStatus: document.getElementById('connectionStatus'),
-                    coordsDisplay: document.getElementById('coords-display'),
-                    xCoord: document.getElementById('x-coord'),
-                    yCoord: document.getElementById('y-coord'),
-                    mouthDisplay: document.getElementById('mouth-open-display'),
-                    mouthValue: document.getElementById('mouth-open-value'),
-                    blinkDisplay: document.getElementById('blink-display'),
-                    leftBlink: document.getElementById('left-blink-status'),
-                    rightBlink: document.getElementById('right-blink-status'),
-                    bothBlink: document.getElementById('both-blink-status'),
-                    faceCountDisplay: document.getElementById('face-count-display'),
-                    faceCountValue: document.getElementById('face-count-value'),
-                    faceSizeDisplay: document.getElementById('face-size-display'),
-                    faceWidth: document.getElementById('face-width-value'),
-                    faceHeight: document.getElementById('face-height-value')
+                    coordsDisplay: document.getElementById('coords-display'), xCoord: document.getElementById('x-coord'), yCoord: document.getElementById('y-coord'),
+                    mouthDisplay: document.getElementById('mouth-open-display'), mouthValue: document.getElementById('mouth-open-value'),
+                    blinkDisplay: document.getElementById('blink-display'), leftBlink: document.getElementById('left-blink-status'), rightBlink: document.getElementById('right-blink-status'), bothBlink: document.getElementById('both-blink-status'),
+                    faceCountDisplay: document.getElementById('face-count-display'), faceCountValue: document.getElementById('face-count-value'),
+                    faceSizeDisplay: document.getElementById('face-size-display'), faceWidth: document.getElementById('face-width-value'), faceHeight: document.getElementById('face-height-value'),
+                    sendOnceToggle: document.getElementById('send-once-toggle'), sendModeStatus: document.getElementById('send-mode-status') // *** 여기가 추가된 부분 ***
                 };
             },
             resetAll() {
-                ['coordsDisplay', 'mouthDisplay', 'blinkDisplay', 'faceCountDisplay', 'faceSizeDisplay'].forEach(key => {
-                    this.elements[key].classList.add('opacity-50');
-                });
-                this.elements.xCoord.textContent = '0';
-                this.elements.yCoord.textContent = '0';
-                this.elements.mouthValue.textContent = '0';
-                this.elements.leftBlink.textContent = '0';
-                this.elements.rightBlink.textContent = '0';
-                this.elements.bothBlink.textContent = '0';
-                this.elements.faceCountValue.textContent = '0';
-                this.elements.faceWidth.textContent = '0';
-                this.elements.faceHeight.textContent = '0';
+                ['coordsDisplay', 'mouthDisplay', 'blinkDisplay', 'faceCountDisplay', 'faceSizeDisplay'].forEach(key => this.elements[key].classList.add('opacity-50'));
+                this.elements.xCoord.textContent = '0'; this.elements.yCoord.textContent = '0'; this.elements.mouthValue.textContent = '0';
+                this.elements.leftBlink.textContent = '0'; this.elements.rightBlink.textContent = '0'; this.elements.bothBlink.textContent = '0';
+                this.elements.faceCountValue.textContent = '0'; this.elements.faceWidth.textContent = '0'; this.elements.faceHeight.textContent = '0';
             },
             updateConnectionStatus(connected, type = '') {
                 this.elements.connectionStatus.textContent = connected ? _t('status_connected', { connectionType: type }) : _t('status_disconnected');
@@ -201,6 +196,16 @@
             updateStartButton(textKey, disabled) {
                 this.elements.startBtn.textContent = _t(textKey);
                 this.elements.startBtn.disabled = disabled;
+            },
+            // *** 여기가 추가된 부분: 토글 상태 표시 업데이트 함수 ***
+            updateSendModeStatus(sendOnce) {
+                if (sendOnce) {
+                    this.elements.sendModeStatus.textContent = '1회 전송 (once)';
+                    this.elements.sendModeStatus.className = 'ml-2 text-sm font-bold text-green-600';
+                } else {
+                    this.elements.sendModeStatus.textContent = '연속 전송 (continuously)';
+                    this.elements.sendModeStatus.className = 'ml-2 text-sm font-bold text-blue-600';
+                }
             }
         };
 
@@ -272,7 +277,8 @@
             }
         };
 
-        const AppState = { isRunning: false, activeTabId: 'face-coords', leftEyeBlinkCounter: 0, rightEyeBlinkCounter: 0, faceMesh: null, camera: null, lastSendTime: 0 };
+        // *** 여기가 수정된 부분: AppState에 상태 변수 추가 ***
+        const AppState = { isRunning: false, activeTabId: 'face-coords', leftEyeBlinkCounter: 0, rightEyeBlinkCounter: 0, faceMesh: null, camera: null, lastSendTime: 0, sendOnce: true, lastSentData: null };
 
         const FaceRecognitionApp = {
             onResults(results) {
@@ -297,12 +303,19 @@
                     }
                 } else {
                     UIManager.resetAll();
+                    AppState.lastSentData = null; // 얼굴이 없으면 초기화
                 }
 
+                // *** 여기가 수정된 부분: 토글 상태에 따른 전송 로직 ***
                 if (dataString) {
-                    const now = Date.now();
-                    if (now - AppState.lastSendTime > CONFIG.SEND_INTERVAL_MS) {
-                        if (ConnectionManager.port || ConnectionManager.bleCharacteristic) {
+                    if (AppState.sendOnce) {
+                        if (AppState.lastSentData !== dataString) {
+                            ConnectionManager.sendToMCU(dataString);
+                            AppState.lastSentData = dataString;
+                        }
+                    } else {
+                        const now = Date.now();
+                        if (now - AppState.lastSendTime > CONFIG.SEND_INTERVAL_MS) {
                             ConnectionManager.sendToMCU(dataString);
                             AppState.lastSendTime = now;
                         }
@@ -312,6 +325,7 @@
             },
             switchTab(tabId) {
                 AppState.activeTabId = tabId;
+                AppState.lastSentData = null; // 탭 전환 시 초기화
                 document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
                 const tabEl = document.querySelector(`button[onclick="FaceRecognitionApp.switchTab('${tabId}')"]`);
@@ -340,9 +354,15 @@
             },
             init() {
                 UIManager.init();
+                UIManager.updateSendModeStatus(AppState.sendOnce); // *** 여기가 추가된 부분 ***
                 UIManager.elements.startBtn.addEventListener('click', () => this.startRecognition());
                 UIManager.elements.connectSerialBtn.addEventListener('click', () => ConnectionManager.connectSerial());
                 UIManager.elements.disconnectSerialBtn.addEventListener('click', () => ConnectionManager.disconnectSerial());
+                // *** 여기가 추가된 부분: 토글 이벤트 리스너 ***
+                UIManager.elements.sendOnceToggle.addEventListener('change', (e) => {
+                    AppState.sendOnce = e.target.checked;
+                    UIManager.updateSendModeStatus(AppState.sendOnce);
+                });
                 
                 window.FaceRecognitionApp = this;
                 window.ConnectionManager = ConnectionManager;
@@ -350,7 +370,6 @@
         };
 
         document.addEventListener('DOMContentLoaded', () => {
-             // setLanguage(); // 번역 기능을 사용하지 않으므로 주석 처리
              FaceRecognitionApp.init()
         });
     </script>
