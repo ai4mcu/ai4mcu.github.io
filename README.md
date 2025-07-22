@@ -2,7 +2,7 @@
 
 📅 Since 2023.04.24 | 📧 alphaco@kakao.com
 
-WebSerial과 WebBLE를 이용해 페이스매시 결과를 유/무선으로 MCU에 전송하는 로컬 웹앱입니다.
+WebSerial과 WebBLE를 이용해 다양한 인공지능 서비스 결과를 유/무선으로 MCU에 전송하는 로컬 웹앱입니다.
 
 ✅ 아두이노, 마이크로비트, ESP32, 라즈베리파이 피코 등 모든 MCU를 사용할 수 있습니다.
 
