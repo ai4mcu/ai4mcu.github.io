@@ -120,8 +120,8 @@
             <div class="flex flex-wrap items-center">
                 <button id="connectSerialBtn" class="btn btn-primary" data-translate-key="serial_connect">시리얼 연결</button>
                 <button id="disconnectSerialBtn" class="btn btn-danger" disabled data-translate-key="disconnect">해제</button>
-                <button class="btn btn-primary" onclick="ConnectionManager.connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
-                <button class="btn btn-danger" onclick="ConnectionManager.disconnectBLE()" data-translate-key="disconnect">해제</button>
+                <button id="connectBleBtn" class="btn btn-primary" onclick="ConnectionManager.connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+                <button id="disconnectBleBtn" class="btn btn-danger" disabled onclick="ConnectionManager.disconnectBLE()" data-translate-key="disconnect">해제</button>
                 <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
             </div>
              <div class="mt-4 pt-4 border-t flex items-center justify-between">
@@ -246,6 +246,8 @@
                     startBtn: document.getElementById('start-btn'),
                     connectSerialBtn: document.getElementById('connectSerialBtn'),
                     disconnectSerialBtn: document.getElementById('disconnectSerialBtn'),
+                    connectBleBtn: document.getElementById('connectBleBtn'),
+                    disconnectBleBtn: document.getElementById('disconnectBleBtn'),
                     connectionStatus: document.getElementById('connectionStatus'),
                     coordsDisplay: document.getElementById('coords-display'), xCoord: document.getElementById('x-coord'), yCoord: document.getElementById('y-coord'),
                     thumbDistDisplay: document.getElementById('thumb-dist-display'), thumbDistValue: document.getElementById('thumb-dist-value'),
@@ -260,27 +262,25 @@
                 this.elements.totalFingerCount.textContent = '0'; this.elements.leftFingerCount.textContent = '0'; this.elements.rightFingerCount.textContent = '0';
                 this.elements.leftX.textContent = '0'; this.elements.leftY.textContent = '0'; this.elements.rightX.textContent = '0'; this.elements.rightY.textContent = '0';
             },
-            // *** 여기가 수정된 부분: 연결 버튼 상태 관리 로직 변경 ***
             updateConnectionStatus() {
                 const serialConnected = !!ConnectionManager.port;
-                const bleConnected = ConnectionManager.bleDevice?.gatt?.connected;
-                
-                let statusText = _t('status_disconnected');
-                let statusType = '';
+                const bleConnected = !!(ConnectionManager.bleDevice?.gatt?.connected);
 
                 if (serialConnected) {
-                    statusText = _t('status_connected', { connectionType: '시리얼' });
-                    statusType = '시리얼';
+                    this.elements.connectionStatus.textContent = _t('status_connected', { connectionType: '시리얼' });
+                    this.elements.connectionStatus.className = 'status connected';
                 } else if (bleConnected) {
-                    statusText = _t('status_connected', { connectionType: '블루투스' });
-                    statusType = '블루투스';
+                    this.elements.connectionStatus.textContent = _t('status_connected', { connectionType: '블루투스' });
+                    this.elements.connectionStatus.className = 'status connected';
+                } else {
+                    this.elements.connectionStatus.textContent = _t('status_disconnected');
+                    this.elements.connectionStatus.className = 'status disconnected';
                 }
 
-                this.elements.connectionStatus.textContent = statusText;
-                this.elements.connectionStatus.className = `status ${serialConnected || bleConnected ? 'connected' : 'disconnected'}`;
-                
                 this.elements.connectSerialBtn.disabled = serialConnected;
                 this.elements.disconnectSerialBtn.disabled = !serialConnected;
+                this.elements.connectBleBtn.disabled = bleConnected;
+                this.elements.disconnectBleBtn.disabled = !bleConnected;
             },
             updateStartButton(textKey, disabled) {
                 this.elements.startBtn.textContent = _t(textKey);
@@ -331,7 +331,11 @@
                 const opts = devType === 'microbit' ? {filters:[{namePrefix:"BBC micro:bit"}], optionalServices:[CONFIG.BLE_SERVICE_UUID]} : {filters:[{services:[CONFIG.BLE_SERVICE_UUID]}]};
                 try {
                     this.bleDevice = await navigator.bluetooth.requestDevice(opts);
-                    this.bleDevice.addEventListener('gattserverdisconnected', () => { UIManager.updateConnectionStatus() });
+                    this.bleDevice.addEventListener('gattserverdisconnected', () => { 
+                        this.bleDevice = null;
+                        this.bleCharacteristic = null;
+                        UIManager.updateConnectionStatus();
+                    });
                     const server = await this.bleDevice.gatt.connect();
                     const service = await server.getPrimaryService(CONFIG.BLE_SERVICE_UUID);
                     this.bleCharacteristic = await service.getCharacteristic(CONFIG.BLE_CHARACTERISTIC_UUID);

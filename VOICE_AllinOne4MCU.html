@@ -11,9 +11,9 @@
         .btn { padding: 10px 20px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.3s; margin-right: 10px; }
         .btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
         .btn-primary { background: #e74c3c; color: white; } 
-        .btn-primary:hover { background: #c0392b; }
+        .btn-primary:hover:not(:disabled) { background: #c0392b; }
         .btn-danger { background: #1abc9c; color: white; }
-        .btn-danger:hover { background: #16a085; }
+        .btn-danger:hover:not(:disabled) { background: #16a085; }
         .status { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; margin-left: 10px; }
         .status.connected { background: #d4efdf; color: #1e8449; }
         .status.disconnected { background: #f9ebea; color: #b03a2e; }
@@ -95,10 +95,10 @@
                     </select>
                 </div>
                 <div class="flex flex-wrap items-center">
-                    <button class="btn btn-primary" onclick="connectSerial()" data-translate-key="serial_connect">시리얼 연결</button>
-                    <button class="btn btn-danger" onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
-                    <button class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
-                    <button class="btn btn-danger" onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
+                    <button id="connectSerialBtn" class="btn btn-primary" onclick="connectSerial()" data-translate-key="serial_connect">시리얼 연결</button>
+                    <button id="disconnectSerialBtn" class="btn btn-danger" disabled onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
+                    <button id="connectBleBtn" class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+                    <button id="disconnectBleBtn" class="btn btn-danger" disabled onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
                     <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
                 </div>
                 <div class="mt-4 pt-4 border-t flex items-center justify-between">
@@ -150,8 +150,11 @@
         let bleDevice = null;
         let bleCharacteristic = null;
         let recognition = null;
-        let sendOnce = true; // 전송 방식 상태 변수
-        let lastSentCommand = null; // 마지막으로 전송된 명령어
+        let sendOnce = true;
+        let lastSentCommand = null;
+        
+        // 버튼 DOM 요소를 저장할 전역 변수
+        let connectSerialBtn, disconnectSerialBtn, connectBleBtn, disconnectBleBtn;
 
         // --- 연결 관리 ---
         async function sendToMCU(data) {
@@ -175,15 +178,21 @@
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
-                updateConnectionStatus(true, '시리얼');
-            } catch (error) { alert(`시리얼 연결 실패: ${error.message}`); }
+                updateConnectionStatus();
+            } catch (error) { 
+                if (error.name !== 'NotFoundError') alert(`시리얼 연결 실패: ${error.message}`);
+            }
         }
         
         async function disconnectSerial() {
             if (port) { 
-                await port.close(); 
-                port = null; 
-                updateConnectionStatus(false); 
+                try {
+                    await port.close(); 
+                } catch(e) { console.error("Port close error:", e); }
+                finally {
+                    port = null; 
+                    updateConnectionStatus();
+                }
             }
         }
         
@@ -195,30 +204,48 @@
 
             try {
                 bleDevice = await navigator.bluetooth.requestDevice(options);
+                bleDevice.addEventListener('gattserverdisconnected', () => {
+                    bleDevice = null;
+                    bleCharacteristic = null;
+                    updateConnectionStatus();
+                });
                 const server = await bleDevice.gatt.connect();
                 const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
                 bleCharacteristic = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
-                updateConnectionStatus(true, '블루투스');
+                updateConnectionStatus();
                 alert('블루투스 연결 성공!');
             } catch (error) {
                 alert(`블루투스 연결 실패: ${error.message}`);
-                updateConnectionStatus(false);
+                updateConnectionStatus();
             }
         }
         
         function disconnectBLE() {
             if (bleDevice?.gatt.connected) {
                 bleDevice.gatt.disconnect();
-                bleDevice = null;
-                bleCharacteristic = null;
-                updateConnectionStatus(false);
             }
         }
         
-        function updateConnectionStatus(connected, type = '') {
+        function updateConnectionStatus() {
             const statusEl = document.getElementById('connectionStatus');
-            statusEl.textContent = connected ? `${type} 연결됨` : '연결 안됨';
-            statusEl.className = `status ${connected ? 'connected' : 'disconnected'}`;
+            const serialConnected = !!port;
+            const bleConnected = !!(bleDevice?.gatt?.connected);
+
+            if (serialConnected) {
+                statusEl.textContent = '시리얼 연결됨';
+                statusEl.className = 'status connected';
+            } else if (bleConnected) {
+                statusEl.textContent = '블루투스 연결됨';
+                statusEl.className = 'status connected';
+            } else {
+                statusEl.textContent = '연결 안됨';
+                statusEl.className = 'status disconnected';
+            }
+
+            connectSerialBtn.disabled = serialConnected;
+            disconnectSerialBtn.disabled = !serialConnected;
+            connectBleBtn.disabled = bleConnected;
+            disconnectBleBtn.disabled = !bleConnected;
         }
 
         // --- 음성 명령 앱 로직 ---
@@ -239,7 +266,7 @@
 
             recognition.onstart = () => {
                 updateRecognitionStatus(true, '음성 인식 중...');
-                lastSentCommand = null; // 인식이 시작될 때 마지막 명령어 초기화
+                lastSentCommand = null;
             };
             recognition.onend = () => updateRecognitionStatus(false, '인식 대기중');
             recognition.onerror = (e) => {
@@ -258,7 +285,6 @@
             statusEl.className = `status text-center w-full mt-4 p-2 ${isListening ? 'listening' : 'disconnected'}`;
         }
 
-        // processCommand 함수 수정
         function processCommand(event) {
             const transcript = event.results[event.results.length - 1][0].transcript.trim();
             document.getElementById('final-transcript').textContent = transcript;
@@ -288,7 +314,7 @@
                 }
             }
             if (!commandFound) {
-                lastSentCommand = null; // 일치하는 명령어가 없으면 마지막 명령어 초기화
+                lastSentCommand = null;
             }
         }
 
@@ -323,7 +349,6 @@
             commandList.appendChild(newRow);
         }
 
-        // 전송 방식 상태 업데이트 함수 추가
         function updateSendModeStatus() {
             const statusEl = document.getElementById('send-mode-status');
             if (sendOnce) {
@@ -337,6 +362,13 @@
 
         // --- 앱 초기화 ---
         document.addEventListener('DOMContentLoaded', () => {
+            connectSerialBtn = document.getElementById('connectSerialBtn');
+            disconnectSerialBtn = document.getElementById('disconnectSerialBtn');
+            connectBleBtn = document.getElementById('connectBleBtn');
+            disconnectBleBtn = document.getElementById('disconnectBleBtn');
+            
+            updateConnectionStatus(); // 페이지 로드 시 버튼 상태 초기화
+
             if (typeof setLanguage === 'function') { setLanguage(); }
             if (setupVoiceRecognition()) {
                 document.getElementById('start-btn').onclick = () => recognition.start();
@@ -344,14 +376,13 @@
             }
             setupCommandUI();
 
-            // 토글 스위치 이벤트 리스너 추가
             const sendOnceToggle = document.getElementById('send-once-toggle');
             sendOnceToggle.addEventListener('change', (e) => {
                 sendOnce = e.target.checked;
                 updateSendModeStatus();
-                lastSentCommand = null; // 모드 변경 시 초기화
+                lastSentCommand = null;
             });
-            updateSendModeStatus(); // 초기 상태 설정
+            updateSendModeStatus();
         });
     </script>
 </body>

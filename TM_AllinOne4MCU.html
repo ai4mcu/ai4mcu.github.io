@@ -158,9 +158,9 @@
             </div>
             <div class="flex flex-wrap items-center">
                 <button id="connectSerialBtn" class="btn btn-primary" onclick="connectSerial()" data-translate-key="serial_connect">시리얼 연결</button>
-                <button id="disconnectSerialBtn" class="btn btn-danger" onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
-                <button class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
-                <button class="btn btn-danger" onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
+                <button id="disconnectSerialBtn" class="btn btn-danger" disabled onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
+                <button id="connectBleBtn" class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
+                <button id="disconnectBleBtn" class="btn btn-danger" disabled onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
                 <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
             </div>
              <div class="mt-4 pt-4 border-t flex items-center justify-between">
@@ -223,12 +223,13 @@
         let animationId = null;
         let poseCtx = null;
         let selectedDeviceId = null; 
-        let sendOnce = true; // *** 여기가 추가된 부분 ***
+        let sendOnce = true;
 
-        // *** 여기가 수정된 부분: UI 요소 추가 ***
         const ui = {
             connectSerialBtn: null,
             disconnectSerialBtn: null,
+            connectBleBtn: null,
+            disconnectBleBtn: null,
             sendOnceToggle: null,
             sendModeStatus: null
         };
@@ -239,7 +240,7 @@
             if (isRunning.pose && tab !== 'pose') stopPose();
             if (isRunning.voice && tab !== 'voice') stopVoice();
             currentTab = tab;
-            lastSentClass = ""; // 탭 전환 시 초기화
+            lastSentClass = ""; 
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
             const tabIndex = tab === 'image' ? 0 : tab === 'pose' ? 1 : 2;
@@ -290,7 +291,6 @@
 
         // ==================== 공통 함수 ====================
         
-        // *** 여기가 수정된 부분: 토글 상태에 따른 전송 로직 ***
         async function sendToMCU(data) {
             if (sendOnce) {
                 if (data === lastSentClass) return;
@@ -484,7 +484,7 @@
             try {
                 port = await navigator.serial.requestPort();
                 await port.open({ baudRate: 9600 });
-                updateConnectionStatus(true, '시리얼');
+                updateConnectionStatus();
             } catch (error) { if (error.name !== 'NotFoundError') alert(`시리얼 연결 실패: ${error.message}`); }
         }
         
@@ -496,7 +496,7 @@
                     console.error("포트 닫기 오류:", error);
                 } finally {
                     port = null; 
-                    updateConnectionStatus(false);
+                    updateConnectionStatus();
                 }
             }
         }
@@ -512,16 +512,16 @@
                 bleDevice.addEventListener('gattserverdisconnected', () => {
                     bleDevice = null;
                     bleCharacteristic = null;
-                    updateConnectionStatus(false);
+                    updateConnectionStatus();
                 });
                 const server = await bleDevice.gatt.connect();
                 const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
                 bleCharacteristic = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
-                updateConnectionStatus(true, '블루투스');
+                updateConnectionStatus();
                 alert('블루투스 연결 성공!');
             } catch (error) {
                 alert(`블루투스 연결 실패: ${error.message}`);
-                updateConnectionStatus(false);
+                updateConnectionStatus();
             }
         }
         
@@ -531,11 +531,10 @@
             }
         }
         
-        // *** 여기가 수정된 부분: 연결 버튼 상태 관리 로직 변경 ***
-        function updateConnectionStatus(connected, type = '') {
+        function updateConnectionStatus() {
             const statusEl = document.getElementById('connectionStatus');
             const serialConnected = !!port;
-            const bleConnected = bleDevice?.gatt?.connected;
+            const bleConnected = !!(bleDevice?.gatt?.connected);
 
             let statusText = '연결 안됨';
             if (serialConnected) statusText = '시리얼 연결됨';
@@ -546,9 +545,10 @@
 
             ui.connectSerialBtn.disabled = serialConnected;
             ui.disconnectSerialBtn.disabled = !serialConnected;
+            ui.connectBleBtn.disabled = bleConnected;
+            ui.disconnectBleBtn.disabled = !bleConnected;
         }
 
-        // *** 여기가 추가된 부분: 토글 상태 표시 업데이트 함수 ***
         function updateSendModeStatus() {
             if (sendOnce) {
                 ui.sendModeStatus.textContent = '1회 전송 (once)';
@@ -560,13 +560,15 @@
         }
 
         window.addEventListener('load', () => {
-            // *** 여기가 수정된 부분: UI 요소 초기화 및 이벤트 리스너 설정 ***
-            ui.connectSerialBtn = document.querySelector('button[onclick="connectSerial()"]');
-            ui.disconnectSerialBtn = document.querySelector('button[onclick="disconnectSerial()"]');
+            ui.connectSerialBtn = document.getElementById('connectSerialBtn');
+            ui.disconnectSerialBtn = document.getElementById('disconnectSerialBtn');
+            ui.connectBleBtn = document.querySelector('button[onclick="connectBLE()"]');
+            ui.disconnectBleBtn = document.querySelector('button[onclick="disconnectBLE()"]');
             ui.sendOnceToggle = document.getElementById('send-once-toggle');
             ui.sendModeStatus = document.getElementById('send-mode-status');
             
             setupWebcamSelector();
+            updateConnectionStatus();
             updateSendModeStatus();
             
             ui.sendOnceToggle.addEventListener('change', (e) => {
