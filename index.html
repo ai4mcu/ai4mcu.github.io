@@ -26,6 +26,10 @@
             transform: none;
             box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
         }
+        /* 타이틀 애니메이션을 위한 CSS */
+        #main-title {
+            transition: opacity 0.5s ease-in-out;
+        }
     </style>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -65,7 +69,7 @@
 <body class="bg-gray-100">
     <div class="container mx-auto p-4 md:p-8">
         <header class="text-center mb-12">
-            <h1 class="text-4xl md:text-6xl font-black text-gray-800" data-translate-key="main_title">AI-EDU-KIT for MCU</h1>
+            <h1 id="main-title" class="text-4xl md:text-6xl font-black text-gray-800" data-translate-key="main_title">AI-EDU-KIT for MCU</h1>
             <p class="text-lg text-gray-500 mt-4" data-translate-key="main_subtitle">영상처리 인공지능을 활용해 하드웨어를 제어하는 멋진 경험을 해보세요.</p>
             <p class="text-lg text-gray-500 mt-4" data-translate-key="main_description">마이크로비트, 아두이노, ESP32, RP 피코를 유선과 무선으로 연결해 제어할 수 있어요. </p>
         </header>
@@ -363,6 +367,38 @@
 
         document.addEventListener('DOMContentLoaded', () => {
             new VisitorCounter();
+        });
+
+        // ### 타이틀 애니메이션 스크립트 (수정됨) ###
+        document.addEventListener('DOMContentLoaded', () => {
+            const titleElement = document.getElementById('main-title');
+            if (titleElement) {
+                const titles = [
+                    "AI-EDU-KIT for MCU",
+                    "AI4MCU",
+                    "아두이노를 위한 AI",
+                    "마이크로비트를 위한 AI",
+                    "인공지능으로 피지컬 컴퓨팅제어",
+                    "노코드AI로 제어하는 피지컬컴퓨팅",
+                    "지능화사물을 위한 AI"
+                ];
+                let currentIndex = 0;
+
+                // 다른 스크립트(i18n.js)의 자동 번역 기능과의 충돌을 막기 위해 속성을 제거합니다.
+                titleElement.removeAttribute('data-translate-key');
+
+                setInterval(() => {
+                    titleElement.style.opacity = 0; // 서서히 사라지게 함
+
+                    // 0.5초 후 텍스트를 바꾸고 다시 나타나게 함 (CSS의 transition 시간과 일치)
+                    setTimeout(() => {
+                        currentIndex = (currentIndex + 1) % titles.length;
+                        titleElement.textContent = titles[currentIndex];
+                        titleElement.style.opacity = 1;
+                    }, 500);
+
+                }, 5000); // 5초마다 실행
+            }
         });
     </script>
 </body>
