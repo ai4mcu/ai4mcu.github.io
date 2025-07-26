@@ -383,6 +383,8 @@
         document.addEventListener('DOMContentLoaded', () => {
              FaceRecognitionApp.init()
         });
+        // 우클릭 방지
+        document.addEventListener('contextmenu', event => event.preventDefault());
     </script>
 </body>
 </html>

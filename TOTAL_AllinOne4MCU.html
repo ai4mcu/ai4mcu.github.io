@@ -201,6 +201,8 @@
     </div>
 
     <script>
+        // 우클릭 방지
+        document.addEventListener('contextmenu', event => event.preventDefault());
         // Tab switching function
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
