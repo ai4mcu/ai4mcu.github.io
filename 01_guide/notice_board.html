@@ -70,6 +70,12 @@
             </div>
         </div>
 
+        <!-- 네비게이션 (관리자에게만 보임) -->
+        <nav id="admin-nav" class="hidden mb-4">
+            <button onclick="window.showUserView()" class="btn bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">사용자 뷰</button>
+            <button onclick="window.showAdminView()" class="btn bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">관리자 뷰</button>
+        </nav>
+
         <!-- 사용자 뷰 -->
         <main id="user-view">
             <!-- 새 글 작성 (로그인 시 보임) -->
@@ -104,7 +110,30 @@
             </div>
         </main>
         
-        <!-- 관리자 뷰 (생략) -->
+        <!-- 관리자 뷰 -->
+        <main id="admin-view" class="hidden">
+            <!-- 게시글 관리 -->
+            <div class="card p-6 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">게시글 관리</h2>
+                <div id="admin-posts-list" class="space-y-4">
+                    <!-- 관리자용 게시글 목록 -->
+                </div>
+                 <div id="admin-posts-empty" class="hidden text-center py-12 text-gray-500">
+                    <p>게시글이 없습니다.</p>
+                </div>
+            </div>
+
+            <!-- 사용자 관리 -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">사용자 관리</h2>
+                <div id="admin-users-list" class="space-y-2">
+                    <!-- 사용자 목록 -->
+                </div>
+                 <div id="admin-users-empty" class="hidden text-center py-12 text-gray-500">
+                    <p>사용자가 없습니다.</p>
+                </div>
+            </div>
+        </main>
     </div>
 
     <!-- Firebase SDK -->
@@ -138,19 +167,81 @@
         const postsEmpty = document.getElementById('posts-empty');
         const searchInput = document.getElementById('searchInput');
         
-        // --- 인증 관리 (이전과 동일) ---
+        // 관리자 뷰 DOM 요소
+        const adminNav = document.getElementById('admin-nav');
+        const userView = document.getElementById('user-view');
+        const adminView = document.getElementById('admin-view');
+        const adminPostsList = document.getElementById('admin-posts-list');
+        const adminUsersList = document.getElementById('admin-users-list');
+        const adminPostsEmpty = document.getElementById('admin-posts-empty');
+        const adminUsersEmpty = document.getElementById('admin-users-empty');
+        
+        // --- 인증 관리 ---
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
-                authContainer.innerHTML = `<div class="flex items-center space-x-2 sm:space-x-4"><img src="${user.photoURL}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full"><p class="font-semibold text-sm sm:text-base">${user.displayName}</p><button onclick="window.signOutFromGoogle()" class="text-xs sm:text-sm text-red-500 hover:underline">로그아웃</button></div>`;
+                authContainer.innerHTML = `<div class="flex items-center space-x-2 sm:space-x-4"><img src="${user.photoURL}" alt="${user.displayName}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full"><div class="text-left"><p class="font-semibold text-sm sm:text-base">${user.displayName}</p><button onclick="window.signOutFromGoogle()" class="text-xs sm:text-sm text-red-500 hover:underline">로그아웃</button></div></div>`;
                 postFormContainer.classList.remove('hidden');
+                
+                // 관리자 확인
+                if (user.uid === ADMIN_UID) {
+                    adminNav.classList.remove('hidden');
+                    getUsersForAdmin();
+                } else {
+                    adminNav.classList.add('hidden');
+                    showUserView(); // 일반 사용자는 항상 사용자 뷰
+                }
+
+                saveUser(user);
             } else {
                 authContainer.innerHTML = `<button onclick="window.signInWithGoogle()" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Google로 로그인</button>`;
                 postFormContainer.classList.add('hidden');
+                adminNav.classList.add('hidden');
+                showUserView();
             }
         });
-        window.signInWithGoogle = async () => { /* ... */ };
-        window.signOutFromGoogle = async () => { /* ... */ };
+
+        window.signInWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google 로그인 에러:", error);
+                alert("로그인 중 오류가 발생했습니다. 팝업 차단을 해제했는지 확인해주세요.");
+            }
+        };
+
+        window.signOutFromGoogle = async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("로그아웃 에러:", error);
+            }
+        };
+
+        async function saveUser(user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    joinedAt: serverTimestamp()
+                });
+            }
+        }
+
+        // --- 뷰 전환 ---
+        window.showUserView = () => {
+            userView.classList.remove('hidden');
+            adminView.classList.add('hidden');
+        };
+        window.showAdminView = () => {
+            userView.classList.add('hidden');
+            adminView.classList.remove('hidden');
+        };
 
         // --- 게시글 관리 ---
         postForm.addEventListener('submit', async (e) => {
@@ -175,6 +266,7 @@
         onSnapshot(q, (snapshot) => {
             allPosts = snapshot.docs;
             renderUserPosts();
+            renderAdminPosts(); // 관리자 뷰도 함께 렌더링
         });
         
         searchInput.addEventListener('input', renderUserPosts);
@@ -218,7 +310,6 @@
                     </div>
                     <div id="post-content-${id}" class="post-content">
                         <p class="text-gray-700 whitespace-pre-wrap mb-6">${data.content}</p>
-                        <!-- 댓글 섹션 -->
                         <div id="comments-section-${id}">
                             <h4 class="font-semibold mb-3 text-gray-800">댓글</h4>
                             <div id="comments-list-${id}" class="space-y-4 mb-4"></div>
@@ -277,7 +368,68 @@
             input.value = '';
         };
 
-        // signInWithGoogle, signOutFromGoogle, saveUser, 관리자 관련 함수 등은 생략 (이전 코드와 동일)
+        // --- 관리자 기능 ---
+        function renderAdminPosts() {
+            if (allPosts.length === 0) {
+                adminPostsList.innerHTML = '';
+                adminPostsEmpty.classList.remove('hidden');
+            } else {
+                adminPostsEmpty.classList.add('hidden');
+                adminPostsList.innerHTML = allPosts.map(doc => renderPostForAdmin(doc.id, doc.data())).join('');
+            }
+        }
+
+        function renderPostForAdmin(id, data) {
+            const date = data.createdAt?.toDate().toLocaleString() || '';
+            const visibilityText = data.hidden ? '공개' : '비공개';
+            const visibilityClass = data.hidden ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600';
+            return `
+                <div class="p-3 border rounded-lg flex justify-between items-center ${data.hidden ? 'bg-gray-100' : ''}">
+                    <div>
+                        <p class="font-bold ${data.hidden ? 'text-gray-400 line-through' : ''}">${data.title}</p>
+                        <p class="text-sm text-gray-600">${data.authorName} - ${date}</p>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="window.togglePostVisibility('${id}', ${data.hidden})" class="btn text-white px-3 py-1 text-sm rounded ${visibilityClass}">${visibilityText}</button>
+                        <button onclick="window.deletePost('${id}')" class="btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded">삭제</button>
+                    </div>
+                </div>`;
+        }
+
+        window.deletePost = async (postId) => {
+            if (confirm("정말로 이 게시글을 삭제하시겠습니까? 댓글도 모두 삭제됩니다.")) {
+                await deleteDoc(doc(db, "posts", postId));
+            }
+        };
+
+        window.togglePostVisibility = async (postId, isHidden) => {
+            await updateDoc(doc(db, "posts", postId), { hidden: !isHidden });
+        };
+
+
+        function getUsersForAdmin() {
+            onSnapshot(collection(db, "users"), (snapshot) => {
+                if (snapshot.empty) {
+                    adminUsersList.innerHTML = '';
+                    adminUsersEmpty.classList.remove('hidden');
+                } else {
+                    adminUsersEmpty.classList.add('hidden');
+                    adminUsersList.innerHTML = snapshot.docs.map(doc => {
+                        const user = doc.data();
+                        const date = user.joinedAt?.toDate().toLocaleDateString() || '';
+                        return `
+                            <div class="p-3 border rounded-lg flex items-center space-x-4">
+                                <img src="${user.photoURL}" class="w-10 h-10 rounded-full">
+                                <div class="flex-1">
+                                    <p class="font-semibold">${user.displayName} ${user.uid === ADMIN_UID ? '<span class="text-xs text-purple-600 font-bold">👑ADMIN</span>' : ''}</p>
+                                    <p class="text-sm text-gray-500">${user.email}</p>
+                                </div>
+                                <p class="text-sm text-gray-500">가입: ${date}</p>
+                            </div>`;
+                    }).join('');
+                }
+            });
+        }
 
     </script>
 </body>
