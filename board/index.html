@@ -1,0 +1,445 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🗨️ Firebase 연동 게시판</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+            background-color: #f0f2f5;
+        }
+        .card {
+            background-color: white;
+            border-radius: 1rem;
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+        .btn {
+            transition: all 0.2s ease;
+        }
+        .comment-section {
+            display: none;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <!-- 헤더 및 로그인 정보 -->
+        <header class="card p-6 mb-8 flex justify-between items-center">
+            <div>
+                <h1 class="text-3xl font-bold text-gray-800">🗨️ Firebase 연동 게시판</h1>
+                <p class="text-gray-500">구글 계정으로 로그인하고 글을 작성해보세요.</p>
+            </div>
+            <div id="auth-container" class="text-right">
+                <!-- 로그인 상태에 따라 내용 변경 -->
+            </div>
+        </header>
+
+        <!-- 네비게이션 (관리자에게만 보임) -->
+        <nav id="admin-nav" class="hidden mb-4">
+            <button onclick="showUserView()" class="btn bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">사용자 뷰</button>
+            <button onclick="showAdminView()" class="btn bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">관리자 뷰</button>
+        </nav>
+
+        <!-- 사용자 뷰 -->
+        <main id="user-view">
+            <!-- 새 글 작성 (로그인 시 보임) -->
+            <div id="post-form-container" class="card p-6 mb-8 hidden">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">새 글 작성하기</h2>
+                <form id="postForm" class="space-y-4">
+                    <input type="text" id="titleInput" placeholder="제목을 입력하세요" required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    <textarea id="contentInput" rows="5" placeholder="내용을 입력하세요..." required class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"></textarea>
+                    <div class="text-right">
+                        <button type="submit" class="btn bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">글 등록</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- 게시글 목록 -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">게시글 목록</h2>
+                <div id="posts-list" class="space-y-6">
+                    <!-- 게시글이 여기에 동적으로 추가됩니다. -->
+                </div>
+                <div id="posts-empty" class="hidden text-center py-12 text-gray-500">
+                    <p>아직 게시글이 없습니다. 첫 글을 작성해보세요!</p>
+                </div>
+            </div>
+        </main>
+
+        <!-- 관리자 뷰 -->
+        <main id="admin-view" class="hidden">
+            <!-- 게시글 관리 -->
+            <div class="card p-6 mb-8">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">게시글 관리</h2>
+                <div id="admin-posts-list" class="space-y-4">
+                    <!-- 관리자용 게시글 목록 -->
+                </div>
+                 <div id="admin-posts-empty" class="hidden text-center py-12 text-gray-500">
+                    <p>게시글이 없습니다.</p>
+                </div>
+            </div>
+
+            <!-- 사용자 관리 -->
+            <div class="card p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">사용자 관리</h2>
+                <div id="admin-users-list" class="space-y-2">
+                    <!-- 사용자 목록 -->
+                </div>
+                 <div id="admin-users-empty" class="hidden text-center py-12 text-gray-500">
+                    <p>사용자가 없습니다.</p>
+                </div>
+            </div>
+        </main>
+
+    </div>
+
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Firebase v11 (modular) SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, query, onSnapshot, doc, setDoc, getDoc, updateDoc, deleteDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- 설정 영역 ---
+        // 중요: 아래 firebaseConfig를 자신의 Firebase 프로젝트 설정으로 교체하세요.
+        const firebaseConfig = {
+            apiKey: "AIzaSyBWSK42k2WEvrNI4uG2gOxyfLet007xOlk",
+            authDomain: "ai4mcu-board.firebaseapp.com",
+            projectId: "ai4mcu-board",
+            storageBucket: "ai4mcu-board.firebasestorage.app",
+            messagingSenderId: "272844059782",
+            appId: "1:272844059782:web:b8b33fa2c0756856af8d07",
+            measurementId: "G-9RM2JWMTP9"
+          };
+        
+        // 중요: 관리자로 지정할 사용자의 Google UID를 여기에 입력하세요.
+        const ADMIN_UID = "alphaco@kakao.com";
+
+        // --- Firebase 초기화 ---
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- DOM 요소 ---
+        const authContainer = document.getElementById('auth-container');
+        const postFormContainer = document.getElementById('post-form-container');
+        const postForm = document.getElementById('postForm');
+        const postsList = document.getElementById('posts-list');
+        const postsEmpty = document.getElementById('posts-empty');
+        
+        const adminNav = document.getElementById('admin-nav');
+        const userView = document.getElementById('user-view');
+        const adminView = document.getElementById('admin-view');
+        const adminPostsList = document.getElementById('admin-posts-list');
+        const adminUsersList = document.getElementById('admin-users-list');
+        const adminPostsEmpty = document.getElementById('admin-posts-empty');
+        const adminUsersEmpty = document.getElementById('admin-users-empty');
+
+
+        // --- 인증 관리 ---
+        let currentUser = null;
+
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                // 로그인 상태
+                authContainer.innerHTML = `
+                    <div class="flex items-center space-x-4">
+                        <img src="${user.photoURL}" alt="${user.displayName}" class="w-10 h-10 rounded-full">
+                        <div>
+                            <p class="font-semibold">${user.displayName}</p>
+                            <button onclick="window.signOutFromGoogle()" class="text-sm text-red-500 hover:underline">로그아웃</button>
+                        </div>
+                    </div>
+                `;
+                postFormContainer.classList.remove('hidden');
+                
+                // 관리자인지 확인
+                if (user.uid === ADMIN_UID) {
+                    adminNav.classList.remove('hidden');
+                    getUsersForAdmin(); // 관리자용 사용자 목록 로드
+                } else {
+                    adminNav.classList.add('hidden');
+                }
+                
+                // 사용자 정보 Firestore에 저장
+                saveUser(user);
+
+            } else {
+                // 로그아웃 상태
+                authContainer.innerHTML = `
+                    <button onclick="window.signInWithGoogle()" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">
+                        Google로 로그인
+                    </button>
+                `;
+                postFormContainer.classList.add('hidden');
+                adminNav.classList.add('hidden');
+                showUserView(); // 로그아웃 시 항상 사용자 뷰로
+            }
+        });
+
+        window.signInWithGoogle = async () => {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google 로그인 에러:", error);
+            }
+        };
+
+        window.signOutFromGoogle = async () => {
+            try {
+                await signOut(auth);
+            } catch (error) {
+                console.error("로그아웃 에러:", error);
+            }
+        };
+
+        async function saveUser(user) {
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+            if (!userSnap.exists()) {
+                // 새 사용자일 경우에만 정보 저장
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    displayName: user.displayName,
+                    email: user.email,
+                    photoURL: user.photoURL,
+                    joinedAt: serverTimestamp()
+                });
+            }
+        }
+
+        // --- 뷰 전환 ---
+        window.showUserView = () => {
+            userView.classList.remove('hidden');
+            adminView.classList.add('hidden');
+        }
+        window.showAdminView = () => {
+            userView.classList.add('hidden');
+            adminView.classList.remove('hidden');
+        }
+
+        // --- 게시글 관리 (Firestore) ---
+        const postsCollection = collection(db, "posts");
+        
+        // 게시글 추가
+        postForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                alert("로그인이 필요합니다.");
+                return;
+            }
+            const title = document.getElementById('titleInput').value;
+            const content = document.getElementById('contentInput').value;
+
+            try {
+                await addDoc(postsCollection, {
+                    title: title,
+                    content: content,
+                    authorUid: currentUser.uid,
+                    authorName: currentUser.displayName,
+                    authorPhoto: currentUser.photoURL,
+                    createdAt: serverTimestamp(),
+                    hidden: false,
+                });
+                postForm.reset();
+            } catch (error) {
+                console.error("게시글 추가 에러: ", error);
+            }
+        });
+
+        // 게시글 실시간 조회 (사용자 & 관리자)
+        const q = query(postsCollection, orderBy("createdAt", "desc"));
+        onSnapshot(q, (snapshot) => {
+            // 사용자 뷰 렌더링
+            if (snapshot.empty) {
+                postsList.innerHTML = '';
+                postsEmpty.classList.remove('hidden');
+            } else {
+                postsEmpty.classList.add('hidden');
+                postsList.innerHTML = snapshot.docs
+                    .filter(doc => !doc.data().hidden) // 숨김 처리된 글은 보여주지 않음
+                    .map(doc => renderPost(doc.id, doc.data())).join('');
+                
+                // 각 게시물의 댓글 로드
+                snapshot.docs.forEach(doc => {
+                    if (!doc.data().hidden) {
+                        getComments(doc.id);
+                    }
+                });
+            }
+
+            // 관리자 뷰 렌더링
+            if (snapshot.empty) {
+                adminPostsList.innerHTML = '';
+                adminPostsEmpty.classList.remove('hidden');
+            } else {
+                adminPostsEmpty.classList.add('hidden');
+                adminPostsList.innerHTML = snapshot.docs
+                    .map(doc => renderPostForAdmin(doc.id, doc.data())).join('');
+            }
+        });
+
+        // 게시글 HTML 렌더링 (사용자용)
+        function renderPost(id, data) {
+            const postDate = data.createdAt?.toDate().toLocaleString() || '방금 전';
+            return `
+                <div class="p-5 border border-gray-200 rounded-lg" id="post-${id}">
+                    <div class="flex items-start space-x-4">
+                        <img src="${data.authorPhoto}" class="w-10 h-10 rounded-full">
+                        <div class="flex-1">
+                            <div class="flex justify-between items-center">
+                                <p class="font-semibold">${data.authorName}</p>
+                                <p class="text-sm text-gray-500">${postDate}</p>
+                            </div>
+                            <h3 class="text-xl font-bold my-2">${data.title}</h3>
+                            <p class="text-gray-700 whitespace-pre-wrap">${data.content}</p>
+                            <button onclick="window.toggleComments('${id}')" class="text-sm text-blue-500 hover:underline mt-4">댓글 보기/숨기기</button>
+                        </div>
+                    </div>
+                    <!-- 댓글 섹션 -->
+                    <div id="comments-section-${id}" class="comment-section mt-4 pl-14">
+                        <div id="comments-list-${id}" class="space-y-3 mb-3"></div>
+                        ${currentUser ? `
+                        <form onsubmit="window.addComment(event, '${id}')" class="flex space-x-2">
+                            <input type="text" placeholder="댓글을 입력하세요..." required class="flex-1 p-2 border rounded-md">
+                            <button type="submit" class="btn bg-gray-600 text-white px-4 rounded-md hover:bg-gray-700">등록</button>
+                        </form>
+                        ` : '<p class="text-sm text-gray-500">댓글을 작성하려면 로그인하세요.</p>'}
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- 댓글 관리 (Firestore) ---
+        window.toggleComments = (postId) => {
+            const section = document.getElementById(`comments-section-${postId}`);
+            if (section.style.display === 'block') {
+                section.style.display = 'none';
+            } else {
+                section.style.display = 'block';
+            }
+        };
+
+        window.addComment = async (event, postId) => {
+            event.preventDefault();
+            if (!currentUser) return;
+
+            const input = event.target.querySelector('input');
+            const content = input.value;
+            if (!content) return;
+
+            const commentsCollection = collection(db, "posts", postId, "comments");
+            await addDoc(commentsCollection, {
+                content: content,
+                authorUid: currentUser.uid,
+                authorName: currentUser.displayName,
+                authorPhoto: currentUser.photoURL,
+                createdAt: serverTimestamp()
+            });
+            input.value = '';
+        };
+
+        function getComments(postId) {
+            const commentsList = document.getElementById(`comments-list-${postId}`);
+            if (!commentsList) return;
+
+            const commentsQuery = query(collection(db, "posts", postId, "comments"), orderBy("createdAt", "asc"));
+            onSnapshot(commentsQuery, (snapshot) => {
+                if (snapshot.empty) {
+                    commentsList.innerHTML = '<p class="text-sm text-gray-400">아직 댓글이 없습니다.</p>';
+                } else {
+                    commentsList.innerHTML = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        const commentDate = data.createdAt?.toDate().toLocaleString() || '';
+                        return `
+                            <div class="flex items-start space-x-3">
+                                <img src="${data.authorPhoto}" class="w-8 h-8 rounded-full">
+                                <div class="flex-1 bg-gray-100 p-3 rounded-lg">
+                                    <div class="flex justify-between items-center">
+                                        <p class="font-semibold text-sm">${data.authorName}</p>
+                                        <p class="text-xs text-gray-500">${commentDate}</p>
+                                    </div>
+                                    <p class="text-sm text-gray-800">${data.content}</p>
+                                </div>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            });
+        }
+
+        // --- 관리자 기능 ---
+        function renderPostForAdmin(id, data) {
+            const postDate = data.createdAt?.toDate().toLocaleString() || '';
+            const visibilityText = data.hidden ? '공개' : '비공개';
+            const visibilityClass = data.hidden ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600';
+            return `
+                <div class="p-3 border rounded-lg flex justify-between items-center ${data.hidden ? 'bg-gray-100' : ''}">
+                    <div>
+                        <p class="font-bold ${data.hidden ? 'text-gray-400 line-through' : ''}">${data.title}</p>
+                        <p class="text-sm text-gray-600">${data.authorName} - ${postDate}</p>
+                    </div>
+                    <div class="space-x-2">
+                        <button onclick="window.togglePostVisibility('${id}', ${data.hidden})" class="btn text-white px-3 py-1 text-sm rounded ${visibilityClass}">${visibilityText}</button>
+                        <button onclick="window.deletePost('${id}')" class="btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded">삭제</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        window.deletePost = async (postId) => {
+            if (confirm("정말로 이 게시글을 삭제하시겠습니까? 댓글도 모두 삭제됩니다.")) {
+                await deleteDoc(doc(db, "posts", postId));
+            }
+        };
+
+        window.togglePostVisibility = async (postId, isHidden) => {
+            const postRef = doc(db, "posts", postId);
+            await updateDoc(postRef, {
+                hidden: !isHidden
+            });
+        };
+
+        function getUsersForAdmin() {
+            const usersCollection = collection(db, "users");
+            onSnapshot(usersCollection, (snapshot) => {
+                if (snapshot.empty) {
+                    adminUsersList.innerHTML = '';
+                    adminUsersEmpty.classList.remove('hidden');
+                } else {
+                    adminUsersEmpty.classList.add('hidden');
+                    adminUsersList.innerHTML = snapshot.docs.map(doc => {
+                        const user = doc.data();
+                        const joinDate = user.joinedAt?.toDate().toLocaleDateString() || '';
+                        return `
+                            <div class="p-3 border rounded-lg flex items-center space-x-4">
+                                <img src="${user.photoURL}" class="w-10 h-10 rounded-full">
+                                <div class="flex-1">
+                                    <p class="font-semibold">${user.displayName} ${user.uid === ADMIN_UID ? '<span class="text-xs text-purple-600 font-bold">👑ADMIN</span>' : ''}</p>
+                                    <p class="text-sm text-gray-500">${user.email}</p>
+                                </div>
+                                <p class="text-sm text-gray-500">가입: ${joinDate}</p>
+                            </div>
+                        `;
+                    }).join('');
+                }
+            });
+        }
+
+    </script>
+</body>
+</html>
