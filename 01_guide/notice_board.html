@@ -72,8 +72,8 @@
 
         <!-- 네비게이션 (관리자에게만 보임) -->
         <nav id="admin-nav" class="hidden mb-4">
-            <button onclick="window.showUserView()" class="btn bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">사용자 뷰</button>
-            <button onclick="window.showAdminView()" class="btn bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">관리자 뷰</button>
+            <button id="user-view-btn" class="btn bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600">사용자 뷰</button>
+            <button id="admin-view-btn" class="btn bg-purple-500 text-white px-4 py-2 rounded-lg hover:bg-purple-600">관리자 뷰</button>
         </nav>
 
         <!-- 사용자 뷰 -->
@@ -115,9 +115,7 @@
             <!-- 게시글 관리 -->
             <div class="card p-6 mb-8">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">게시글 관리</h2>
-                <div id="admin-posts-list" class="space-y-4">
-                    <!-- 관리자용 게시글 목록 -->
-                </div>
+                <div id="admin-posts-list" class="space-y-4"></div>
                  <div id="admin-posts-empty" class="hidden text-center py-12 text-gray-500">
                     <p>게시글이 없습니다.</p>
                 </div>
@@ -126,9 +124,7 @@
             <!-- 사용자 관리 -->
             <div class="card p-6">
                 <h2 class="text-2xl font-bold text-gray-800 mb-4">사용자 관리</h2>
-                <div id="admin-users-list" class="space-y-2">
-                    <!-- 사용자 목록 -->
-                </div>
+                <div id="admin-users-list" class="space-y-2"></div>
                  <div id="admin-users-empty" class="hidden text-center py-12 text-gray-500">
                     <p>사용자가 없습니다.</p>
                 </div>
@@ -167,7 +163,6 @@
         const postsEmpty = document.getElementById('posts-empty');
         const searchInput = document.getElementById('searchInput');
         
-        // 관리자 뷰 DOM 요소
         const adminNav = document.getElementById('admin-nav');
         const userView = document.getElementById('user-view');
         const adminView = document.getElementById('admin-view');
@@ -176,32 +171,8 @@
         const adminPostsEmpty = document.getElementById('admin-posts-empty');
         const adminUsersEmpty = document.getElementById('admin-users-empty');
         
-        // --- 인증 관리 ---
-        onAuthStateChanged(auth, (user) => {
-            currentUser = user;
-            if (user) {
-                authContainer.innerHTML = `<div class="flex items-center space-x-2 sm:space-x-4"><img src="${user.photoURL}" alt="${user.displayName}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full"><div class="text-left"><p class="font-semibold text-sm sm:text-base">${user.displayName}</p><button onclick="window.signOutFromGoogle()" class="text-xs sm:text-sm text-red-500 hover:underline">로그아웃</button></div></div>`;
-                postFormContainer.classList.remove('hidden');
-                
-                // 관리자 확인
-                if (user.uid === ADMIN_UID) {
-                    adminNav.classList.remove('hidden');
-                    getUsersForAdmin();
-                } else {
-                    adminNav.classList.add('hidden');
-                    showUserView(); // 일반 사용자는 항상 사용자 뷰
-                }
-
-                saveUser(user);
-            } else {
-                authContainer.innerHTML = `<button onclick="window.signInWithGoogle()" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Google로 로그인</button>`;
-                postFormContainer.classList.add('hidden');
-                adminNav.classList.add('hidden');
-                showUserView();
-            }
-        });
-
-        window.signInWithGoogle = async () => {
+        // --- 인증 함수 ---
+        const signInWithGoogle = async () => {
             const provider = new GoogleAuthProvider();
             try {
                 await signInWithPopup(auth, provider);
@@ -211,13 +182,49 @@
             }
         };
 
-        window.signOutFromGoogle = async () => {
+        const signOutFromGoogle = async () => {
             try {
                 await signOut(auth);
             } catch (error) {
                 console.error("로그아웃 에러:", error);
             }
         };
+
+        // --- 이벤트 리스너 (안정적인 방식) ---
+        authContainer.addEventListener('click', (event) => {
+            if (event.target.closest('#google-login-btn')) {
+                signInWithGoogle();
+            }
+            if (event.target.closest('#google-logout-btn')) {
+                signOutFromGoogle();
+            }
+        });
+
+        document.getElementById('user-view-btn').addEventListener('click', () => showView('user'));
+        document.getElementById('admin-view-btn').addEventListener('click', () => showView('admin'));
+
+        // --- 인증 상태 변경 감지 ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                authContainer.innerHTML = `<div class="flex items-center space-x-2 sm:space-x-4"><img src="${user.photoURL}" alt="${user.displayName}" class="w-8 h-8 sm:w-10 sm:h-10 rounded-full"><div class="text-left"><p class="font-semibold text-sm sm:text-base">${user.displayName}</p><button id="google-logout-btn" class="text-xs sm:text-sm text-red-500 hover:underline">로그아웃</button></div></div>`;
+                postFormContainer.classList.remove('hidden');
+                
+                if (user.uid === ADMIN_UID) {
+                    adminNav.classList.remove('hidden');
+                    getUsersForAdmin();
+                } else {
+                    adminNav.classList.add('hidden');
+                    showView('user');
+                }
+                saveUser(user);
+            } else {
+                authContainer.innerHTML = `<button id="google-login-btn" class="btn bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg">Google로 로그인</button>`;
+                postFormContainer.classList.add('hidden');
+                adminNav.classList.add('hidden');
+                showView('user');
+            }
+        });
 
         async function saveUser(user) {
             const userRef = doc(db, "users", user.uid);
@@ -234,23 +241,22 @@
         }
 
         // --- 뷰 전환 ---
-        window.showUserView = () => {
-            userView.classList.remove('hidden');
-            adminView.classList.add('hidden');
-        };
-        window.showAdminView = () => {
-            userView.classList.add('hidden');
-            adminView.classList.remove('hidden');
+        const showView = (viewName) => {
+            if (viewName === 'admin') {
+                userView.classList.add('hidden');
+                adminView.classList.remove('hidden');
+            } else {
+                userView.classList.remove('hidden');
+                adminView.classList.add('hidden');
+            }
         };
 
         // --- 게시글 관리 ---
         postForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             if (!currentUser) return alert("로그인이 필요합니다.");
-            
             const title = document.getElementById('titleInput').value;
             const content = document.getElementById('contentInput').value;
-
             await addDoc(collection(db, "posts"), {
                 title, content,
                 authorUid: currentUser.uid,
@@ -266,7 +272,7 @@
         onSnapshot(q, (snapshot) => {
             allPosts = snapshot.docs;
             renderUserPosts();
-            renderAdminPosts(); // 관리자 뷰도 함께 렌더링
+            renderAdminPosts();
         });
         
         searchInput.addEventListener('input', renderUserPosts);
@@ -275,7 +281,7 @@
             const searchTerm = searchInput.value.toLowerCase();
             const filteredPosts = allPosts.filter(doc => {
                 const data = doc.data();
-                if (data.hidden) return false;
+                if (data.hidden && currentUser?.uid !== ADMIN_UID) return false;
                 if (searchTerm) {
                     return data.title.toLowerCase().includes(searchTerm) || data.authorName.toLowerCase().includes(searchTerm);
                 }
@@ -285,7 +291,7 @@
             if (filteredPosts.length === 0) {
                 postsList.innerHTML = '';
                 postsEmpty.classList.remove('hidden');
-                postsEmpty.querySelector('p').textContent = searchTerm ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다. 첫 글을 작성해보세요!';
+                postsEmpty.querySelector('p').textContent = searchTerm ? '검색 결과가 없습니다.' : '아직 게시글이 없습니다.';
             } else {
                 postsEmpty.classList.add('hidden');
                 postsList.innerHTML = filteredPosts.map(doc => renderPostHTML(doc.id, doc.data())).join('');
@@ -296,9 +302,9 @@
             const date = data.createdAt?.toDate().toLocaleString() || '방금 전';
             return `
                 <div class="border-b last:border-b-0 border-gray-200">
-                    <div class="post-header p-4 flex justify-between items-center" onclick="window.togglePostContent('${id}')">
+                    <div class="post-header p-4 flex justify-between items-center" onclick="togglePostContent('${id}')">
                         <div class="flex-1 min-w-0">
-                            <p class="text-lg font-semibold text-gray-800 truncate">${data.title}</p>
+                            <p class="text-lg font-semibold text-gray-800 truncate ${data.hidden ? 'text-gray-400' : ''}">${data.title} ${data.hidden ? '<span class="text-xs text-red-500">(숨김)</span>' : ''}</p>
                             <div class="flex items-center text-sm text-gray-500 mt-1">
                                 <img src="${data.authorPhoto}" class="w-5 h-5 rounded-full mr-2">
                                 <span>${data.authorName}</span>
@@ -313,7 +319,7 @@
                         <div id="comments-section-${id}">
                             <h4 class="font-semibold mb-3 text-gray-800">댓글</h4>
                             <div id="comments-list-${id}" class="space-y-4 mb-4"></div>
-                            ${currentUser ? `<form onsubmit="window.addComment(event, '${id}')" class="flex space-x-2"><input type="text" placeholder="댓글을 입력하세요..." required class="flex-1 p-2 border rounded-md"><button type="submit" class="btn bg-gray-700 text-white px-4 rounded-md hover:bg-gray-800">등록</button></form>` : '<p class="text-sm text-gray-500">댓글을 작성하려면 로그인하세요.</p>'}
+                            ${currentUser ? `<form onsubmit="addComment(event, '${id}')" class="flex space-x-2"><input type="text" placeholder="댓글을 입력하세요..." required class="flex-1 p-2 border rounded-md"><button type="submit" class="btn bg-gray-700 text-white px-4 rounded-md hover:bg-gray-800">등록</button></form>` : '<p class="text-sm text-gray-500">댓글을 작성하려면 로그인하세요.</p>'}
                         </div>
                     </div>
                 </div>
@@ -339,15 +345,13 @@
             if (!commentsList) return;
             const q = query(collection(db, "posts", postId, "comments"), orderBy("createdAt", "asc"));
             onSnapshot(q, (snapshot) => {
-                if (snapshot.empty) {
-                    commentsList.innerHTML = '<p class="text-sm text-gray-400">아직 댓글이 없습니다.</p>';
-                } else {
-                    commentsList.innerHTML = snapshot.docs.map(doc => {
+                commentsList.innerHTML = snapshot.empty 
+                    ? '<p class="text-sm text-gray-400">아직 댓글이 없습니다.</p>'
+                    : snapshot.docs.map(doc => {
                         const data = doc.data();
                         const date = data.createdAt?.toDate().toLocaleString() || '';
                         return `<div class="flex items-start space-x-3"><img src="${data.authorPhoto}" class="w-8 h-8 rounded-full"><div class="flex-1 bg-gray-100 p-3 rounded-lg"><div class="flex justify-between items-center"><p class="font-semibold text-sm">${data.authorName}</p><p class="text-xs text-gray-500">${date}</p></div><p class="text-sm text-gray-800 mt-1">${data.content}</p></div></div>`;
                     }).join('');
-                }
             });
         }
         
@@ -357,7 +361,6 @@
             const input = event.target.querySelector('input');
             const content = input.value;
             if (!content) return;
-
             await addDoc(collection(db, "posts", postId, "comments"), {
                 content,
                 authorUid: currentUser.uid,
@@ -384,20 +387,20 @@
             const visibilityText = data.hidden ? '공개' : '비공개';
             const visibilityClass = data.hidden ? 'bg-green-500 hover:bg-green-600' : 'bg-yellow-500 hover:bg-yellow-600';
             return `
-                <div class="p-3 border rounded-lg flex justify-between items-center ${data.hidden ? 'bg-gray-100' : ''}">
+                <div class="p-3 border rounded-lg flex justify-between items-center ${data.hidden ? 'bg-gray-200' : ''}">
                     <div>
                         <p class="font-bold ${data.hidden ? 'text-gray-400 line-through' : ''}">${data.title}</p>
                         <p class="text-sm text-gray-600">${data.authorName} - ${date}</p>
                     </div>
                     <div class="space-x-2">
-                        <button onclick="window.togglePostVisibility('${id}', ${data.hidden})" class="btn text-white px-3 py-1 text-sm rounded ${visibilityClass}">${visibilityText}</button>
-                        <button onclick="window.deletePost('${id}')" class="btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded">삭제</button>
+                        <button onclick="togglePostVisibility('${id}', ${data.hidden})" class="btn text-white px-3 py-1 text-sm rounded ${visibilityClass}">${visibilityText}</button>
+                        <button onclick="deletePost('${id}')" class="btn bg-red-500 hover:bg-red-600 text-white px-3 py-1 text-sm rounded">삭제</button>
                     </div>
                 </div>`;
         }
 
         window.deletePost = async (postId) => {
-            if (confirm("정말로 이 게시글을 삭제하시겠습니까? 댓글도 모두 삭제됩니다.")) {
+            if (confirm("정말로 이 게시글을 삭제하시겠습니까?")) {
                 await deleteDoc(doc(db, "posts", postId));
             }
         };
@@ -405,7 +408,6 @@
         window.togglePostVisibility = async (postId, isHidden) => {
             await updateDoc(doc(db, "posts", postId), { hidden: !isHidden });
         };
-
 
         function getUsersForAdmin() {
             onSnapshot(collection(db, "users"), (snapshot) => {
@@ -430,6 +432,11 @@
                 }
             });
         }
+        // 함수들을 window 객체에 할당하여 onclick에서 접근 가능하게 함
+        window.togglePostContent = togglePostContent;
+        window.addComment = addComment;
+        window.deletePost = deletePost;
+        window.togglePostVisibility = togglePostVisibility;
 
     </script>
 </body>
