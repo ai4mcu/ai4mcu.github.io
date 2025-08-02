@@ -122,10 +122,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     </select>
                 </div>
                 <div class="flex flex-wrap items-center">
-                    <button id="connectSerialBtn" class="btn btn-primary" onclick="connectSerial()" data-translate-key="serial_connect">시리얼 연결</button>
-                    <button id="disconnectSerialBtn" class="btn btn-danger" disabled onclick="disconnectSerial()" data-translate-key="disconnect">해제</button>
-                    <button id="connectBleBtn" class="btn btn-primary" onclick="connectBLE()" data-translate-key="ble_connect">블루투스 연결</button>
-                    <button id="disconnectBleBtn" class="btn btn-danger" disabled onclick="disconnectBLE()" data-translate-key="disconnect">해제</button>
+                    <button id="connectSerialBtn" class="btn btn-primary" data-translate-key="serial_connect">시리얼 연결</button>
+                    <button id="disconnectSerialBtn" class="btn btn-danger" disabled data-translate-key="disconnect">해제</button>
+                    <button id="connectBleBtn" class="btn btn-primary" data-translate-key="ble_connect">블루투스 연결</button>
+                    <button id="disconnectBleBtn" class="btn btn-danger" disabled data-translate-key="disconnect">해제</button>
                     <span id="connectionStatus" class="status disconnected" data-translate-key="status_disconnected">연결 안됨</span>
                 </div>
                 <div class="mt-4 pt-4 border-t flex items-center justify-between">
@@ -175,109 +175,137 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <script>
         // 우클릭 방지
         document.addEventListener('contextmenu', event => event.preventDefault());
-        let port = null;
-        let bleDevice = null;
-        let bleCharacteristic = null;
+
+        // HAND 파일과 완전히 동일한 설정 상수
+        const CONFIG = { 
+            SERIAL_BAUD_RATE: 9600, 
+            BLE_SERVICE_UUID: '6e400001-b5a3-f393-e0a9-e50e24dcca9e', 
+            BLE_CHARACTERISTIC_UUID: '6e400003-b5a3-f393-e0a9-e50e24dcca9e'
+        };
+
+        // HAND 파일과 완전히 동일한 ConnectionManager 구조
+        const ConnectionManager = {
+            port: null, writer: null,
+            bleDevice: null, bleCharacteristic: null,
+            async sendToMCU(data) {
+                const dataToSend = data + '\n';
+                if (this.port?.writable) {
+                    try { 
+                        this.writer = this.port.writable.getWriter(); 
+                        await this.writer.write(new TextEncoder().encode(dataToSend)); 
+                    } 
+                    catch (e) { console.error("시리얼 데이터 전송 오류:", e); } 
+                    finally { 
+                        if (this.writer) { 
+                            this.writer.releaseLock(); 
+                            this.writer = null; 
+                        } 
+                    }
+                }
+                if (this.bleCharacteristic) {
+                    try { 
+                        await this.bleCharacteristic.writeValue(new TextEncoder().encode(dataToSend)); 
+                    } 
+                    catch (e) { console.error("BLE 데이터 전송 오류:", e); }
+                }
+            },
+            async connectSerial() { 
+                try {
+                    const port = await navigator.serial.requestPort(); 
+                    await port.open({ baudRate: CONFIG.SERIAL_BAUD_RATE }); 
+                    this.port = port;
+                    UIManager.updateConnectionStatus();
+                } catch(e) { 
+                    if (e.name !== 'NotFoundError') alert(`시리얼 연결 오류: ${e.message}`); 
+                } 
+            },
+            async disconnectSerial() { 
+                if (!this.port) return;
+                try { 
+                    if (this.port.readable || this.port.writable) await this.port.close(); 
+                } 
+                catch (e) { console.error("포트 닫기 오류:", e); } 
+                finally { 
+                    this.port = null; 
+                    UIManager.updateConnectionStatus(); 
+                }
+            },
+            async connectBLE() {
+                const devType = document.getElementById('ble-device-type').value;
+                const opts = devType === 'microbit' ? {filters:[{namePrefix:"BBC micro:bit"}], optionalServices:[CONFIG.BLE_SERVICE_UUID]} : {filters:[{services:[CONFIG.BLE_SERVICE_UUID]}]};
+                try {
+                    this.bleDevice = await navigator.bluetooth.requestDevice(opts);
+                    this.bleDevice.addEventListener('gattserverdisconnected', () => { 
+                        this.bleDevice = null;
+                        this.bleCharacteristic = null;
+                        UIManager.updateConnectionStatus();
+                    });
+                    const server = await this.bleDevice.gatt.connect();
+                    const service = await server.getPrimaryService(CONFIG.BLE_SERVICE_UUID);
+                    this.bleCharacteristic = await service.getCharacteristic(CONFIG.BLE_CHARACTERISTIC_UUID);
+                    UIManager.updateConnectionStatus(); 
+                    alert('블루투스 연결 성공!');
+                } catch(e) {
+                    alert(`블루투스 연결 오류: ${e.message}`); 
+                    UIManager.updateConnectionStatus();
+                }
+            },
+            disconnectBLE() { 
+                if(this.bleDevice?.gatt?.connected) this.bleDevice.gatt.disconnect(); 
+            }
+        };
+
+        // UI 관리자
+        const UIManager = {
+            elements: {},
+            init() {
+                this.elements = {
+                    connectSerialBtn: document.getElementById('connectSerialBtn'),
+                    disconnectSerialBtn: document.getElementById('disconnectSerialBtn'),
+                    connectBleBtn: document.getElementById('connectBleBtn'),
+                    disconnectBleBtn: document.getElementById('disconnectBleBtn'),
+                    connectionStatus: document.getElementById('connectionStatus'),
+                    sendOnceToggle: document.getElementById('send-once-toggle'),
+                    sendModeStatus: document.getElementById('send-mode-status')
+                };
+            },
+            updateConnectionStatus() {
+                const serialConnected = !!ConnectionManager.port;
+                const bleConnected = !!(ConnectionManager.bleDevice?.gatt?.connected);
+
+                if (serialConnected) {
+                    this.elements.connectionStatus.textContent = '시리얼 연결됨';
+                    this.elements.connectionStatus.className = 'status connected';
+                } else if (bleConnected) {
+                    this.elements.connectionStatus.textContent = '블루투스 연결됨';
+                    this.elements.connectionStatus.className = 'status connected';
+                } else {
+                    this.elements.connectionStatus.textContent = '연결 안됨';
+                    this.elements.connectionStatus.className = 'status disconnected';
+                }
+
+                this.elements.connectSerialBtn.disabled = serialConnected;
+                this.elements.disconnectSerialBtn.disabled = !serialConnected;
+                this.elements.connectBleBtn.disabled = bleConnected;
+                this.elements.disconnectBleBtn.disabled = !bleConnected;
+            },
+            updateSendModeStatus(sendOnce) {
+                if (sendOnce) {
+                    this.elements.sendModeStatus.textContent = '1회 전송 (once)';
+                    this.elements.sendModeStatus.className = 'ml-2 text-sm font-bold text-green-600';
+                } else {
+                    this.elements.sendModeStatus.textContent = '연속 전송 (continuously)';
+                    this.elements.sendModeStatus.className = 'ml-2 text-sm font-bold text-blue-600';
+                }
+            }
+        };
+
+        // 음성 인식 관련 변수
         let recognition = null;
         let sendOnce = true;
         let lastSentCommand = null;
-        
-        // 버튼 DOM 요소를 저장할 전역 변수
-        let connectSerialBtn, disconnectSerialBtn, connectBleBtn, disconnectBleBtn;
 
-        // --- 연결 관리 ---
-        async function sendToMCU(data) {
-            const dataToSend = data + '\n';
-            if (port?.writable) {
-                try {
-                    const writer = port.writable.getWriter();
-                    await writer.write(new TextEncoder().encode(dataToSend));
-                    writer.releaseLock();
-                } catch(e) { console.error("Serial send error:", e); }
-            }
-            if (bleCharacteristic) {
-                try {
-                    await bleCharacteristic.writeValue(new TextEncoder().encode(dataToSend));
-                } catch (error) { console.error('BLE send error:', error); }
-            }
-            console.log(`MCU Sent: ${dataToSend.trim()}`);
-        }
-
-        async function connectSerial() {
-            try {
-                port = await navigator.serial.requestPort();
-                await port.open({ baudRate: 9600 });
-                updateConnectionStatus();
-            } catch (error) { 
-                if (error.name !== 'NotFoundError') alert(`시리얼 연결 실패: ${error.message}`);
-            }
-        }
-        
-        async function disconnectSerial() {
-            if (port) { 
-                try {
-                    await port.close(); 
-                } catch(e) { console.error("Port close error:", e); }
-                finally {
-                    port = null; 
-                    updateConnectionStatus();
-                }
-            }
-        }
-        
-        async function connectBLE() {
-            const deviceType = document.getElementById('ble-device-type').value;
-            const options = deviceType === 'microbit'
-                ? { filters: [{ namePrefix: "BBC micro:bit" }], optionalServices: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] }
-                : { filters: [{ services: ['6e400001-b5a3-f393-e0a9-e50e24dcca9e'] }] };
-
-            try {
-                bleDevice = await navigator.bluetooth.requestDevice(options);
-                bleDevice.addEventListener('gattserverdisconnected', () => {
-                    bleDevice = null;
-                    bleCharacteristic = null;
-                    updateConnectionStatus();
-                });
-                const server = await bleDevice.gatt.connect();
-                const service = await server.getPrimaryService('6e400001-b5a3-f393-e0a9-e50e24dcca9e');
-                bleCharacteristic = await service.getCharacteristic('6e400003-b5a3-f393-e0a9-e50e24dcca9e');
-                updateConnectionStatus();
-                alert('블루투스 연결 성공!');
-            } catch (error) {
-                alert(`블루투스 연결 실패: ${error.message}`);
-                updateConnectionStatus();
-            }
-        }
-        
-        function disconnectBLE() {
-            if (bleDevice?.gatt.connected) {
-                bleDevice.gatt.disconnect();
-            }
-        }
-        
-        function updateConnectionStatus() {
-            const statusEl = document.getElementById('connectionStatus');
-            const serialConnected = !!port;
-            const bleConnected = !!(bleDevice?.gatt?.connected);
-
-            if (serialConnected) {
-                statusEl.textContent = '시리얼 연결됨';
-                statusEl.className = 'status connected';
-            } else if (bleConnected) {
-                statusEl.textContent = '블루투스 연결됨';
-                statusEl.className = 'status connected';
-            } else {
-                statusEl.textContent = '연결 안됨';
-                statusEl.className = 'status disconnected';
-            }
-
-            connectSerialBtn.disabled = serialConnected;
-            disconnectSerialBtn.disabled = !serialConnected;
-            connectBleBtn.disabled = bleConnected;
-            disconnectBleBtn.disabled = !bleConnected;
-        }
-
-        // --- 음성 명령 앱 로직 ---
+        // 음성 인식 설정
         function setupVoiceRecognition() {
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             if (!SpeechRecognition) {
@@ -332,11 +360,11 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
                     
                     if (sendOnce) {
                         if (commandInput !== lastSentCommand) {
-                            sendToMCU(valueToSend);
+                            ConnectionManager.sendToMCU(`${valueToSend},0,0,0`);
                             lastSentCommand = commandInput;
                         }
                     } else {
-                        sendToMCU(valueToSend);
+                        ConnectionManager.sendToMCU(`${valueToSend},0,0,0`);
                     }
                     commandFound = true;
                     break; 
@@ -347,7 +375,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             }
         }
 
-        // --- 동적 UI 관리 ---
+        // 동적 UI 관리
         function setupCommandUI() {
             const commandList = document.getElementById('command-list');
             
@@ -378,40 +406,36 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
             commandList.appendChild(newRow);
         }
 
-        function updateSendModeStatus() {
-            const statusEl = document.getElementById('send-mode-status');
-            if (sendOnce) {
-                statusEl.textContent = '1회 전송 (once)';
-                statusEl.className = 'ml-2 text-sm font-bold text-green-600';
-            } else {
-                statusEl.textContent = '연속 전송 (continuously)';
-                statusEl.className = 'ml-2 text-sm font-bold text-blue-600';
-            }
-        }
-
-        // --- 앱 초기화 ---
+        // 앱 초기화
         document.addEventListener('DOMContentLoaded', () => {
-            connectSerialBtn = document.getElementById('connectSerialBtn');
-            disconnectSerialBtn = document.getElementById('disconnectSerialBtn');
-            connectBleBtn = document.getElementById('connectBleBtn');
-            disconnectBleBtn = document.getElementById('disconnectBleBtn');
-            
-            updateConnectionStatus(); // 페이지 로드 시 버튼 상태 초기화
+            UIManager.init();
+            UIManager.updateConnectionStatus();
+            UIManager.updateSendModeStatus(sendOnce);
 
-            if (typeof setLanguage === 'function') { setLanguage(); }
+            // 이벤트 리스너 설정
+            UIManager.elements.connectSerialBtn.addEventListener('click', () => ConnectionManager.connectSerial());
+            UIManager.elements.disconnectSerialBtn.addEventListener('click', () => ConnectionManager.disconnectSerial());
+            UIManager.elements.connectBleBtn.addEventListener('click', () => ConnectionManager.connectBLE());
+            UIManager.elements.disconnectBleBtn.addEventListener('click', () => ConnectionManager.disconnectBLE());
+
+            // 음성 인식 설정
             if (setupVoiceRecognition()) {
                 document.getElementById('start-btn').onclick = () => recognition.start();
                 document.getElementById('stop-btn').onclick = () => recognition.stop();
             }
+            
+            // UI 설정
             setupCommandUI();
 
-            const sendOnceToggle = document.getElementById('send-once-toggle');
-            sendOnceToggle.addEventListener('change', (e) => {
+            // 전송 모드 토글 설정
+            UIManager.elements.sendOnceToggle.addEventListener('change', (e) => {
                 sendOnce = e.target.checked;
-                updateSendModeStatus();
+                UIManager.updateSendModeStatus(sendOnce);
                 lastSentCommand = null;
             });
-            updateSendModeStatus();
+
+            // 전역 객체로 노출 (HAND 파일과 동일)
+            window.ConnectionManager = ConnectionManager;
         });
     </script>
 </body>
